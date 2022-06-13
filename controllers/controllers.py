@@ -34,6 +34,15 @@ def insert():
     return return_ok()
 
 
+@main_blueprint.route('/update', methods=['POST'])
+def update():
+    with get_session() as session:
+        obj = unpack(request.json, tables)
+        session.merge(obj)
+        session.commit()
+    return return_ok()
+
+
 @main_blueprint.route('/list', methods=['POST'])
 def list_rows():
     with get_session() as session:

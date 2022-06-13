@@ -12,7 +12,7 @@ Target = Dict[str, Any]
 def unpack(target: Union[List[Target], Target], tables_dict: Dict[str, Base]) -> Union[List[Base], Base]:
     if type(target) is list:
         return [unpack(sub_target, tables_dict) for sub_target in target]
-    type_: Base = tables_dict[target.pop('__type__')]
+    type_: Base = tables_dict[target.pop('_type_')]
     target: Target
     relations_key: List[str] = list(filter(lambda key: is_relation(target[key]), target))
     target_flat_attrib = {key: target[key] for key in target if key not in relations_key}
