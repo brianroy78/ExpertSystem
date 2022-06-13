@@ -2,14 +2,13 @@ import pickle
 from typing import Dict, List, Set
 
 from flask import Blueprint, request
-from sqlalchemy.orm.collections import InstrumentedList
 
 from app.engine import infer
 from app.models import Rule, Fact, Variable, Value, Inference
-from app.serializer import unpack, sqlalchemy_object_to_dict, query_all
+from app.serializer import unpack, query_all
 from controllers.controllers_utils import as_json, return_ok
-from database.tables import VariableTable, ValueTable, RuleTable, FactTable
 from database import get_session, Base
+from database.tables import VariableTable, ValueTable, RuleTable, FactTable
 
 main_blueprint = Blueprint('main', __name__)
 
@@ -38,46 +37,12 @@ def insert():
 @main_blueprint.route('/list', methods=['POST'])
 def list_rows():
     with get_session() as session:
-        type_: str = request.json['__type__']
-        relations = request.json.get('__relations__', [])
+        type_: str = request.json['_type_']
+        relations = request.json.get('_relations_', [])
         result = query_all(
             session.query(tables[type_]),
             relations
         )
-    return as_json(result)
-
-
-@main_blueprint.route('/rules/list', methods=['POST'])
-def list_rules():
-    with get_session() as session:
-        result = list()
-        for rule in session.query(RuleTable).join(RuleTable.statement):
-            new_rule = {
-                'id': rule.id,
-                'premises': [],
-                'statement': {
-                    'variable': {
-                        'id': rule.statement.variable.id,
-                        'name': rule.statement.variable.name
-                    },
-                    'value': {
-                        'id': rule.statement.value.id,
-                        'name': rule.statement.value.name
-                    }
-                }
-            }
-            for premise in rule.premises:
-                new_rule['premises'].append({
-                    'variable': {
-                        'id': premise.variable.id,
-                        'name': premise.variable.name
-                    },
-                    'value': {
-                        'id': premise.value.id,
-                        'name': premise.value.name
-                    }
-                })
-            result.append(new_rule)
     return as_json(result)
 
 

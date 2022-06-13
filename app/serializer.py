@@ -1,8 +1,9 @@
-from typing import Union, List, Dict, Any
+from typing import Union, List, Dict, Any, Callable
 
 from sqlalchemy.orm import Query
 from sqlalchemy.orm.collections import InstrumentedList
 
+from app.engine import curry
 from database import Base
 
 Target = Dict[str, Any]
@@ -37,30 +38,27 @@ def sqlalchemy_object_to_dict(obj) -> dict:
     return result
 
 
-def get_relation(obj: Base, relation_name: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+def get_relation(obj: Base, relation_name: str, transform: Callable) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
     relation_definition = getattr(obj, relation_name)
     if type(relation_definition) is InstrumentedList:
         return [
-            sqlalchemy_object_to_dict(sub_item)
-            for sub_item in getattr(obj, relation_name)
+            transform(sub_item)
+            for sub_item in relation_definition
         ]
+    return transform(relation_definition)
 
 
-def map_one(obj: Base, relations: List[Dict[str, Any]]) -> Dict:
+def map_one(relations: List[Dict[str, Any]], obj: Base) -> Dict:
     result_relations: Dict = dict()
     for relation_data in relations:
-        relation_name: str = relation_data['__relation_name__']
-        if '__relations__' in relation_data:
-            result_relations[relation_name] = [
-                map_one(sub_item, relation_data['__relations'])
-                for sub_item in getattr(obj, relation_name)
-            ]
-        else:
-            result_relations[relation_name] = get_relation(obj, relation_name)
+        relation_name: str = relation_data['_relation_name_']
+        transform = curry(map_one,
+                          relation_data['_relations_']) if '_relations_' in relation_data else sqlalchemy_object_to_dict
+        result_relations[relation_name] = get_relation(obj, relation_name, transform)
     item_result: dict = sqlalchemy_object_to_dict(obj)
     item_result.update(result_relations)
     return item_result
 
 
 def query_all(query: Query, relations: List[Dict[str, Any]]) -> list:
-    return [map_one(obj, relations) for obj in query]
+    return [map_one(relations, obj) for obj in query]
