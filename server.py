@@ -1,16 +1,18 @@
 from configparser import ConfigParser
 
-from database import set_settings, Data
+from controllers.controllers import main_blueprint
+from database import set_settings
 from flask import Flask
-from database import Base
-from database.tables import *
+from flask_cors import CORS
 
-app = Flask(__name__, template_folder="./templates")
+application = Flask(__name__, template_folder="./templates")
+
+CORS(application)
 
 config = ConfigParser()
 config.read('settings.ini')
 set_settings(config['DEFAULT']['sqlalchemy.url'])
 
-Base.metadata.create_all(Data.ENGINE)
+application.register_blueprint(main_blueprint)
 
-app.run()
+application.run()

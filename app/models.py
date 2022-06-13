@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import FrozenSet, Set
+from typing import FrozenSet, Set, List
 
 
 @dataclass(frozen=True, eq=True)
@@ -34,5 +34,8 @@ class Rule:
 
 @dataclass
 class Inference:
-    rules: Set[Rule]
+    rules: List[Rule]
     facts: Set[Fact]
+    ignored_vars: Set[Variable]
+    ignored_rules: Set[Rule]
+    current_var: Variable

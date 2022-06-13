@@ -1,8 +1,8 @@
 from itertools import groupby
 from typing import Set, Tuple, List, Iterable, Dict, Callable
 
-from models import Rule, Variable, Fact
-from utils import LF
+from app.models import Rule, Variable, Fact
+from app.utils import LF
 
 
 def curry(function: Callable, param) -> Callable:
@@ -44,6 +44,8 @@ def update_rule_base_on_fact(fact: Fact, rule: Rule) -> Rule:
 
 
 def purge_rule_base_on_fact(fact: Fact, rule: Rule) -> bool:
+    if fact.variable == rule.statement.variable:
+        return False
     return fact.variable not in get_variables(rule) or fact in rule.premises
 
 

@@ -4,19 +4,19 @@ from sqlalchemy.orm import relation
 from database import Base
 
 
-class Value(Base):
+class ValueTable(Base):
     __tablename__ = 'value'
     id = Column(Integer, primary_key=True)
-    name = Column(String(80), unique=True, nullable=False)
+    name = Column(String(80), nullable=False)
     parent_id = Column(Integer, ForeignKey("variable.id"))
 
 
-class Variable(Base):
+class VariableTable(Base):
     __tablename__ = 'variable'
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True, nullable=False)
 
-    options = relation(Value)
+    options = relation(ValueTable)
 
 
 rules_facts = Table(
@@ -27,20 +27,21 @@ rules_facts = Table(
 )
 
 
-class Fact(Base):
+class FactTable(Base):
     __tablename__ = 'fact'
     id = Column(Integer, primary_key=True)
     variable_id = Column(Integer, ForeignKey('variable.id'))
     value_id = Column(Integer, ForeignKey('value.id'))
 
-    variable = relation(Variable)
-    value = relation(Value)
-    rules = relation('Rule', secondary=rules_facts)
+    variable = relation(VariableTable)
+    value = relation(ValueTable)
+    rules = relation('RuleTable', secondary=rules_facts)
 
 
-class Rule(Base):
+class RuleTable(Base):
     __tablename__ = 'rule'
     id = Column(Integer, primary_key=True)
     statement_id = Column(Integer, ForeignKey('fact.id'))
 
-    premises = relation(Fact, secondary=rules_facts)
+    statement = relation(FactTable)
+    premises = relation(FactTable, secondary=rules_facts)
