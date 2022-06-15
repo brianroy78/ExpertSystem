@@ -22,14 +22,15 @@ class Fact:
     value: Value
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Rule:
-    premises: Set[Fact]
-    statement: Fact
+    premises: FrozenSet[Fact]
+    conclusions: FrozenSet[Fact]
 
     def __repr__(self):
-        r = [f'{p.variable.name} -> {p.value.name}' for p in self.premises]
-        return f'{",".join(r)} ==> {self.statement.variable.name} -> {self.statement.value.name}'
+        premises = [f'{p.variable.name} -> {p.value.name}' for p in self.premises]
+        conclusions = [f'{c.variable.name} -> {c.value.name}' for c in self.conclusions]
+        return f'{",".join(premises)} ==> {",".join(conclusions)}'
 
 
 @dataclass
@@ -39,3 +40,4 @@ class Inference:
     ignored_vars: Set[Variable]
     ignored_rules: Set[Rule]
     current_var: Variable
+    current_rule: Rule

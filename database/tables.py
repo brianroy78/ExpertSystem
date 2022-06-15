@@ -19,29 +19,51 @@ class VariableTable(Base):
     options = relation(ValueTable)
 
 
-rules_facts = Table(
-    "rule_fact",
+premise = Table(
+    'premise',
     Base.metadata,
-    Column("fact_id", ForeignKey("fact.id")),
-    Column("rule_id", ForeignKey("rule.id")),
+    Column('fact_id', ForeignKey('fact.id'), nullable=False),
+    Column('rule_id', ForeignKey('rule.id'), nullable=False),
+)
+
+conclusion = Table(
+    'conclusion',
+    Base.metadata,
+    Column('fact_id', ForeignKey('fact.id'), nullable=False),
+    Column('rule_id', ForeignKey('rule.id'), nullable=False),
 )
 
 
 class FactTable(Base):
     __tablename__ = 'fact'
     id = Column(Integer, primary_key=True)
-    variable_id = Column(Integer, ForeignKey('variable.id'))
-    value_id = Column(Integer, ForeignKey('value.id'))
+    variable_id = Column(Integer, ForeignKey('variable.id'), nullable=False)
+    value_id = Column(Integer, ForeignKey('value.id'), nullable=False)
 
     variable = relation(VariableTable)
     value = relation(ValueTable)
-    rules = relation('RuleTable', secondary=rules_facts)
 
 
 class RuleTable(Base):
     __tablename__ = 'rule'
     id = Column(Integer, primary_key=True)
-    statement_id = Column(Integer, ForeignKey('fact.id'))
 
-    statement = relation(FactTable)
-    premises = relation(FactTable, secondary=rules_facts)
+    premises = relation(FactTable, secondary=premise)
+    conclusions = relation(FactTable, secondary=conclusion)
+
+
+class ClientTable(Base):
+    __tablename__ = 'client'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32), nullable=False)
+    last_name = Column(String(32), nullable=False)
+    phone_number = Column(String(16))
+    email = Column(String(64))
+
+
+class InferenceTable(Base):
+    __tablename__ = 'inference'
+    id = Column(Integer, primary_key=True)
+    client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
+
+    client = relation(ClientTable)

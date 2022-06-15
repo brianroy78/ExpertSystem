@@ -5,10 +5,10 @@ from flask import Blueprint, request
 
 from app.engine import infer
 from app.models import Rule, Fact, Variable, Value, Inference
-from app.serializer import unpack, query_all
+from database.serializer import unpack, query_all
 from controllers.controllers_utils import as_json, return_ok
 from database import get_session, Base
-from database.tables import VariableTable, ValueTable, RuleTable, FactTable
+from database.tables import VariableTable, ValueTable, RuleTable, FactTable, ClientTable, InferenceTable
 
 main_blueprint = Blueprint('main', __name__)
 
@@ -17,6 +17,8 @@ tables: Dict[str, Base] = {
     'fact': FactTable,
     'value': ValueTable,
     'rule': RuleTable,
+    'client': ClientTable,
+    'inference': InferenceTable
 }
 
 
@@ -76,7 +78,7 @@ def inference_get_rules():
         rules: List[Rule] = list()
         for rule in session.query(RuleTable):
             rule: RuleTable
-            if rule.statement is None:
+            if rule.conclusions is None:
                 continue
             premises = list()
             for premise in rule.premises:
@@ -85,15 +87,19 @@ def inference_get_rules():
                     variables_dict[premise.variable.id],
                     values_dict[premise.value.id]
                 ))
+            conclusions = list()
+            for conclusion in rule.conclusions:
+                conclusion: FactTable
+                conclusions.append(Fact(
+                    variables_dict[conclusion.variable.id],
+                    values_dict[conclusion.value.id]
+                ))
             rules.append(Rule(
-                set(premises),
-                Fact(
-                    variables_dict[rule.statement.variable.id],
-                    values_dict[rule.statement.value.id]
-                )
+                frozenset(premises),
+                frozenset(conclusions)
             ))
 
-    inference = Inference(rules, set(), set(), set(), None)
+    inference = Inference(rules, set(), set(), set(), None, None)
     serialized = pickle.dumps(inference).decode('latin1')
 
     return as_json(serialized)
@@ -113,14 +119,15 @@ def inference_get_variable():
     if len(inference.rules) == 0:
         return as_json({'state': pickle.dumps(inference).decode('latin1')})
 
-    while len(inference.rules) > 0:
-        rule: Rule = inference.rules[-1]
+    for rule in list(inference.rules):
+        rule: Rule
         if has_ignored_var(rule, inference.ignored_vars):
-            inference.ignored_rules |= inference.rules.pop()
+            inference.ignored_rules |= {rule}
             continue
         for premise in set(rule.premises):
             variable: Variable = premise.variable
             inference.current_var = variable
+            inference.current_rule = rule
             return as_json({
                 'state': pickle.dumps(inference).decode('latin1'),
                 'variable': {
@@ -129,8 +136,7 @@ def inference_get_variable():
                     'options': [{'id': op.id, 'name': op.name} for op in variable.options]
                 }
             })
-    if len(inference.rules) == 0:
-        return {'state': pickle.dumps(inference).decode('latin1')}
+    return as_json({'state': pickle.dumps(inference).decode('latin1')})
 
 
 @main_blueprint.route('/inference/respond', methods=['POST'])
@@ -139,7 +145,7 @@ def inference_respond():
     actual_value_id: dict = request.json['value_id']
     if actual_value_id is None:
         inference.ignored_vars.add(inference.current_var)
-        inference.ignored_rules.add(inference.rules.pop())
+        inference.ignored_rules.add(inference.current_rule)
         return as_json(pickle.dumps(inference).decode('latin1'))
     actual_value = list(filter(lambda x: x.id == actual_value_id, inference.current_var.options))[0]
     actual_fact = Fact(inference.current_var, actual_value)

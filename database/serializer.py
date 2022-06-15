@@ -31,7 +31,7 @@ def is_relation(obj: Any) -> bool:
     return type(obj) in [list, dict]
 
 
-def sqlalchemy_object_to_dict(obj) -> dict:
+def table_to_dict(obj) -> dict:
     result: dict = obj.__dict__
     if '_sa_instance_state' in result:
         result.pop('_sa_instance_state')
@@ -52,10 +52,9 @@ def map_one(relations: List[Dict[str, Any]], obj: Base) -> Dict:
     result_relations: Dict = dict()
     for relation_data in relations:
         relation_name: str = relation_data['_relation_name_']
-        transform = curry(map_one,
-                          relation_data['_relations_']) if '_relations_' in relation_data else sqlalchemy_object_to_dict
+        transform = curry(map_one, relation_data['_relations_']) if '_relations_' in relation_data else table_to_dict
         result_relations[relation_name] = get_relation(obj, relation_name, transform)
-    item_result: dict = sqlalchemy_object_to_dict(obj)
+    item_result: dict = table_to_dict(obj)
     item_result.update(result_relations)
     return item_result
 

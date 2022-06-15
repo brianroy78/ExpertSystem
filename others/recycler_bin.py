@@ -11,7 +11,7 @@ def _infer(rules: List[Rule], fact: Fact) -> Tuple[List[Rule], Set[Fact]]:
         if fact in rule.premises:
             rule.premises.remove(fact)
             if len(rule.premises) == 0:
-                result_facts.add(rule.statement)
+                result_facts.add(rule.conclusions)
                 continue
             result_rules.append(rule)
             continue
