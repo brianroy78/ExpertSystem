@@ -35,9 +35,8 @@ class Rule:
 
 @dataclass
 class Inference:
-    rules: List[Rule]
-    facts: Set[Fact]
-    ignored_vars: Set[Variable]
-    ignored_rules: Set[Rule]
+    rules: set[Rule]
+    facts: set[Fact]
+    ignored_vars: set[Variable]
+    ignored_rules: set[Rule]
     current_var: Variable
-    current_rule: Rule

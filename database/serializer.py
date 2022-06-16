@@ -1,9 +1,9 @@
+from functools import partial
 from typing import Union, List, Dict, Any, Callable
 
 from sqlalchemy.orm import Query
 from sqlalchemy.orm.collections import InstrumentedList
 
-from app.engine import curry
 from database import Base
 
 Target = Dict[str, Any]
@@ -52,7 +52,7 @@ def map_one(relations: List[Dict[str, Any]], obj: Base) -> Dict:
     result_relations: Dict = dict()
     for relation_data in relations:
         relation_name: str = relation_data['_relation_name_']
-        transform = curry(map_one, relation_data['_relations_']) if '_relations_' in relation_data else table_to_dict
+        transform = partial(map_one, relation_data['_relations_']) if '_relations_' in relation_data else table_to_dict
         result_relations[relation_name] = get_relation(obj, relation_name, transform)
     item_result: dict = table_to_dict(obj)
     item_result.update(result_relations)

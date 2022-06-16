@@ -19,6 +19,16 @@ class VariableTable(Base):
     options = relation(ValueTable)
 
 
+class FactTable(Base):
+    __tablename__ = 'fact'
+    id = Column(Integer, primary_key=True)
+    variable_id = Column(Integer, ForeignKey('variable.id'), nullable=False)
+    value_id = Column(Integer, ForeignKey('value.id'), nullable=False)
+
+    variable = relation(VariableTable)
+    value = relation(ValueTable)
+
+
 premise = Table(
     'premise',
     Base.metadata,
@@ -32,16 +42,6 @@ conclusion = Table(
     Column('fact_id', ForeignKey('fact.id'), nullable=False),
     Column('rule_id', ForeignKey('rule.id'), nullable=False),
 )
-
-
-class FactTable(Base):
-    __tablename__ = 'fact'
-    id = Column(Integer, primary_key=True)
-    variable_id = Column(Integer, ForeignKey('variable.id'), nullable=False)
-    value_id = Column(Integer, ForeignKey('value.id'), nullable=False)
-
-    variable = relation(VariableTable)
-    value = relation(ValueTable)
 
 
 class RuleTable(Base):
@@ -61,9 +61,19 @@ class ClientTable(Base):
     email = Column(String(64))
 
 
+selected_options = Table(
+    'selected_options',
+    Base.metadata,
+    Column('fact_id', ForeignKey('fact.id'), nullable=False),
+    Column('inference_id', ForeignKey('inference.id'), nullable=False),
+)
+
+
 class InferenceTable(Base):
     __tablename__ = 'inference'
     id = Column(Integer, primary_key=True)
     client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
+
+    selected_options = relation(FactTable, secondary=selected_options)
 
     client = relation(ClientTable)
