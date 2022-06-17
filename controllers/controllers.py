@@ -21,7 +21,6 @@ tables: Dict[str, Base] = {
 
 @main_blueprint.route('/insert', methods=['POST'])
 def insert():
-    id_ = None
     with get_session() as session:
         obj = unpack(request.json, tables)
         session.add(obj)
