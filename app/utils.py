@@ -29,7 +29,7 @@ def remove_from_frozen(elements: frozenset, element) -> frozenset:
     return frozenset(clone)
 
 
-def first(elements: Union[frozenset, set]):
+def first(elements: Union[frozenset, set, Iterable]):
     return next(iter(elements))
 
 
