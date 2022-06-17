@@ -8,13 +8,11 @@ from database.tables import VariableTable, ValueTable, RuleTable, FactTable
 def insert_var(db, var_name: str, options: list[str]) -> list[FactTable]:
     var = VariableTable(name=var_name, options=[ValueTable(name=op) for op in options])
     db.add(var)
-    db.commit()
     return [FactTable(variable=var, value=op) for op in var.options]
 
 
 def insert_rule(db, premises, conclusions):
     db.add(RuleTable(premises=premises, conclusions=conclusions))
-    db.commit()
 
 
 def load():
@@ -30,26 +28,43 @@ def load():
     with get_session() as session:
         nationality_facts = insert_var(
             session,
-            'nacionalidad',
-            [
-                'Boliviano',
-                'Brasilero',
-                'Peruano'
-            ]
+            'tipo de sistema',
+            ['ON GRID', 'OFF GRID', 'Bombeo']
         )
-        bolivian, brazilian, peruvian = nationality_facts
-        birth_place_facts = insert_var(
+        on_grid, off_grid, pumping = nationality_facts
+        yes_on_grid, no_on_grid = insert_var(
             session,
-            'lugar de nacimiento',
+            'el lugar tiene conección a la red eléctica',
+            ['Sí', 'No']
+        )
+
+        insert_rule(session, [yes_on_grid], [on_grid])
+        insert_rule(session, [no_on_grid], [off_grid])
+
+        hot_days_consumption = insert_var(
+            session,
+            'consumo eléctrico promedio por día en Primavera/Verano',
             [
-                'Santa Cruz de la Sierra',
-                'Rio de Janeiro',
-                'Lima'
+                'Entre 5KWH - 10KWH',
+                'Entre 10KWH - 15KWH',
+                'Entre 15KWH - 20KWH',
+                'Entre 20KWH - 25KWH',
+                'Entre 25KWH - 30KWH',
+                'Entre 30KWH - 35KWH',
             ]
         )
 
-        saint, river, lim = birth_place_facts
+        cold_days_consumption = insert_var(
+            session,
+            'consumo eléctrico promedio por día en Otoño/Invierno',
+            [
+                'Entre 5KWH - 10KWH',
+                'Entre 10KWH - 15KWH',
+                'Entre 15KWH - 20KWH',
+                'Entre 20KWH - 25KWH',
+                'Entre 25KWH - 30KWH',
+                'Entre 30KWH - 35KWH',
+            ]
+        )
 
-        insert_rule(session, [saint], [bolivian])
-        insert_rule(session, [river], [brazilian])
-        insert_rule(session, [lim], [peruvian])
+        session.commit()
