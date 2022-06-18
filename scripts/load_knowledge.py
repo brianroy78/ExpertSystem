@@ -5,8 +5,8 @@ from database import get_session, set_settings, Base, Data
 from database.tables import VariableTable, ValueTable, RuleTable, FactTable
 
 
-def insert_var(db, var_name: str, options: list[str]) -> list[FactTable]:
-    var = VariableTable(name=var_name, options=[ValueTable(name=op) for op in options])
+def insert_var(db, var_name: str, options: list[str], required=False) -> list[FactTable]:
+    var = VariableTable(name=var_name, options=[ValueTable(name=op) for op in options], required=required)
     db.add(var)
     return [FactTable(variable=var, value=op) for op in var.options]
 
@@ -26,12 +26,12 @@ def load():
         print("The db does not exist!")
     Base.metadata.create_all(Data.ENGINE)
     with get_session() as session:
-        nationality_facts = insert_var(
+        system_type = insert_var(
             session,
             'tipo de sistema',
             ['ON GRID', 'OFF GRID', 'Bombeo']
         )
-        on_grid, off_grid, pumping = nationality_facts
+        on_grid, off_grid, pumping = system_type
         yes_on_grid, no_on_grid = insert_var(
             session,
             'el lugar tiene conección a la red eléctica',
@@ -51,7 +51,8 @@ def load():
                 'Entre 20KWH - 25KWH',
                 'Entre 25KWH - 30KWH',
                 'Entre 30KWH - 35KWH',
-            ]
+            ],
+            True
         )
 
         cold_days_consumption = insert_var(
@@ -64,7 +65,8 @@ def load():
                 'Entre 20KWH - 25KWH',
                 'Entre 25KWH - 30KWH',
                 'Entre 30KWH - 35KWH',
-            ]
+            ],
+            True
         )
 
         session.commit()

@@ -63,7 +63,7 @@ def get_next_no_ignored_var(rules: set[Rule], ignored_vars: set[Variable]) -> Op
 
 
 @engine_blueprint.route('/inference/respond', methods=['POST'])
-def inference_respond():
+def inference_respond() -> tuple:
     identifier: str = request.json['id']
     inference: Inference = inferences[identifier]
     value_id: Optional[int] = request.json['value_id']
@@ -75,13 +75,11 @@ def inference_respond():
         inference.facts |= new_facts
         inference.rules = rules
 
-        if len(inference.rules) == 0:
-            return finish(identifier)
-
     variable = get_next_no_ignored_var(inference.rules, inference.ignored_variables)
     if variable is None and len(inference.required_variables) == 0:
         return finish(identifier)
     if variable is None and len(inference.required_variables) > 0:
-        as_json({'finished': False, 'variable': variable_to_dict(inference.required_variables.pop())})
+        inference.current_variable = inference.required_variables.pop()
+        return as_json({'finished': False, 'variable': variable_to_dict(inference.current_variable)})
     inference.current_variable = variable
     return as_json({'finished': False, 'variable': variable_to_dict(variable)})
