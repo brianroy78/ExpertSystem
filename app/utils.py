@@ -52,3 +52,7 @@ def compose(*callables: Callable) -> Callable:
         return result
 
     return composed
+
+
+def not_contains(container, obj) -> bool:
+    return obj not in container

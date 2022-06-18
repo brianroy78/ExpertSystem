@@ -37,7 +37,7 @@ def is_ruled_out(fact: Fact, rule: Rule) -> bool:
     return fact.variable not in get_variables(rule) or fact in rule.premises
 
 
-def _infer(rules: list[Rule], fact: Fact) -> tuple[list[Rule], set[Fact]]:
+def _infer(rules: set[Rule], fact: Fact) -> tuple[list[Rule], set[Fact]]:
     result: dict[bool, list[Rule]] = compose(
         partial(filter, partial(is_ruled_out, fact)),
         partial(map, partial(update_rule, fact)),
@@ -47,12 +47,13 @@ def _infer(rules: list[Rule], fact: Fact) -> tuple[list[Rule], set[Fact]]:
     return result.get(False, list()), reduce(ior, new_facts, set())
 
 
-def infer(rules: set[Rule], fact: Fact) -> tuple[list[Rule], set[Fact]]:
-    facts = {fact}
+def infer(rules: set[Rule], fact: Fact) -> tuple[set[Rule], set[Fact]]:
+    input_facts = {fact}
     result_facts = {fact}
-    result_rules = list(rules)
-    while len(facts) > 0 and len(result_rules) > 0:
-        result_rules, new_facts = _infer(result_rules, facts.pop())
-        facts |= new_facts
+    result_rules = set(rules)
+    while len(input_facts) > 0 and len(result_rules) > 0:
+        result_rules, new_facts = _infer(result_rules, input_facts.pop())
+        input_facts |= new_facts
         result_facts |= new_facts
+
     return result_rules, result_facts

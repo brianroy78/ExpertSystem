@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean
 from sqlalchemy.orm import relation
 
 from database import Base
@@ -15,6 +15,7 @@ class VariableTable(Base):
     __tablename__ = 'variable'
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True, nullable=False)
+    required = Column(Boolean, nullable=False, default=False)
 
     options = relation(ValueTable)
 
