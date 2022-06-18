@@ -8,6 +8,7 @@ class ValueTable(Base):
     __tablename__ = 'value'
     id = Column(Integer, primary_key=True)
     name = Column(String(80), nullable=False)
+    order = Column(Integer, nullable=False)
     parent_id = Column(Integer, ForeignKey("variable.id"))
 
 
@@ -15,7 +16,6 @@ class VariableTable(Base):
     __tablename__ = 'variable'
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True, nullable=False)
-    required = Column(Boolean, nullable=False, default=False)
 
     options = relation(ValueTable)
 

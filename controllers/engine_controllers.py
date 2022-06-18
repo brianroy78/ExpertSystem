@@ -19,7 +19,10 @@ def variable_to_dict(variable: Variable) -> dict:
     return {
         'id': variable.id,
         'name': variable.name,
-        'options': [{'id': op.id, 'name': op.name} for op in variable.options]
+        'options': [
+            {'id': op.id, 'name': op.name, 'order': op.order}
+            for op in variable.options
+        ]
     }
 
 
@@ -35,12 +38,12 @@ def finish(identifier: str):
 
 @engine_blueprint.route('/inference/start', methods=['POST'])
 def inference_start():
-    rules, required = from_table_to_model()
+    rules = from_table_to_model()
     if len(rules) == 0:
         return as_json({'finished': True, 'conclusions': []})
     variable = get_next_no_ignored_var(rules, set())
     identifier = str(uuid4())
-    inferences[identifier] = Inference(set(rules), set(), set(), required, variable, False)
+    inferences[identifier] = Inference(set(rules), set(), set(), variable, False)
     return as_json({'id': identifier, 'finished': False, 'variable': variable_to_dict(variable)})
 
 
@@ -76,10 +79,7 @@ def inference_respond() -> tuple:
         inference.rules = rules
 
     variable = get_next_no_ignored_var(inference.rules, inference.ignored_variables)
-    if variable is None and len(inference.required_variables) == 0:
+    if variable is None:
         return finish(identifier)
-    if variable is None and len(inference.required_variables) > 0:
-        inference.current_variable = inference.required_variables.pop()
-        return as_json({'finished': False, 'variable': variable_to_dict(inference.current_variable)})
     inference.current_variable = variable
     return as_json({'finished': False, 'variable': variable_to_dict(variable)})

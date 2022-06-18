@@ -2,11 +2,13 @@ import os
 from configparser import ConfigParser
 
 from database import get_session, set_settings, Base, Data
-from database.tables import VariableTable, ValueTable, RuleTable, FactTable
+from database.tables import VariableTable, ValueTable, RuleTable, FactTable, ClientTable
 
 
-def insert_var(db, var_name: str, options: list[str], required=False) -> list[FactTable]:
-    var = VariableTable(name=var_name, options=[ValueTable(name=op) for op in options], required=required)
+def insert_var(db, var_name: str, options: list[str]) -> list[FactTable]:
+    var = VariableTable(name=var_name, options=[
+        ValueTable(name=op, order=index) for index, op in enumerate(options)
+    ])
     db.add(var)
     return [FactTable(variable=var, value=op) for op in var.options]
 
@@ -51,8 +53,7 @@ def load():
                 'Entre 20KWH - 25KWH',
                 'Entre 25KWH - 30KWH',
                 'Entre 30KWH - 35KWH',
-            ],
-            True
+            ]
         )
 
         cold_days_consumption = insert_var(
@@ -65,8 +66,16 @@ def load():
                 'Entre 20KWH - 25KWH',
                 'Entre 25KWH - 30KWH',
                 'Entre 30KWH - 35KWH',
-            ],
-            True
+            ]
+        )
+
+        session.add(
+            ClientTable(
+                name='Test',
+                last_name='Name',
+                phone_number='12345678',
+                email='address@server.com'
+            )
         )
 
         session.commit()

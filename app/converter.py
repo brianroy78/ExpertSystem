@@ -22,9 +22,9 @@ def is_required(variable: VariableTable) -> bool:
     return variable.required
 
 
-def from_table_to_model() -> tuple[set[Rule], set[Variable]]:
+def from_table_to_model() -> set[Rule]:
     with get_session() as session:
-        values = {v.id: Value(v.id, v.name) for v in session.query(ValueTable)}
+        values = {v.id: Value(v.id, v.name, v.order) for v in session.query(ValueTable)}
         variables = {v.id: to_variable(v, values) for v in session.query(VariableTable)}
         rules: set = {
             Rule(
@@ -33,5 +33,4 @@ def from_table_to_model() -> tuple[set[Rule], set[Variable]]:
             )
             for r in session.query(RuleTable)
         }
-        ids_ = [v.id for v in session.query(VariableTable).filter(VariableTable.required)]
-        return rules, {variables[id_] for id_ in ids_}
+    return rules

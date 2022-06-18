@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import FrozenSet, Set, List
+from typing import FrozenSet
 
 
 @dataclass(frozen=True, eq=True)
 class Value:
     id: int
     name: str
-    # Variable: 'Variable'
+    order: int
 
 
 @dataclass(frozen=True, eq=True)
@@ -38,7 +38,6 @@ class Inference:
     rules: set[Rule]
     facts: set[Fact]
     ignored_variables: set[Variable]
-    required_variables: set[Variable]
     current_variable: Variable
     is_finished: bool
 
