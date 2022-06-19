@@ -1,25 +1,10 @@
-from functools import reduce, partial
-from operator import ior
+from functools import partial
 from typing import Iterable
 
-from app.models import Rule, Variable, Fact
+from app.basic import get_conclusions, get_premises_variables, premises_empty
+from app.custom_functions import reduce_ior
+from app.models import Rule, Fact
 from app.utils import first, group_by, remove_from_frozen, compose
-
-
-def get_variable(fact: Fact) -> Variable:
-    return fact.variable
-
-
-def get_conclusions(rule: Rule) -> frozenset[Fact]:
-    return rule.conclusions
-
-
-def get_variables(rule: Rule) -> set[Variable]:
-    return set(map(get_variable, rule.premises))
-
-
-def premises_empty(rule: Rule) -> bool:
-    return len(rule.premises) == 0
 
 
 def update_rule(fact: Fact, rule: Rule) -> Rule:
@@ -34,17 +19,17 @@ def update_rule(fact: Fact, rule: Rule) -> Rule:
 def is_ruled_out(fact: Fact, rule: Rule) -> bool:
     if len(rule.conclusions) == 1 and fact.variable == first(rule.conclusions).variable:
         return False
-    return fact.variable not in get_variables(rule) or fact in rule.premises
+    return fact.variable not in get_premises_variables(rule) or fact in rule.premises
 
 
-def _infer(rules: set[Rule], fact: Fact) -> tuple[list[Rule], set[Fact]]:
+def _infer(rules: set[Rule], fact: Fact) -> tuple[set[Rule], set[Fact]]:
     result: dict[bool, list[Rule]] = compose(
         partial(filter, partial(is_ruled_out, fact)),
         partial(map, partial(update_rule, fact)),
         partial(group_by, premises_empty)
     )(rules)
     new_facts: Iterable[frozenset[Fact]] = map(get_conclusions, result.get(True, list()))
-    return result.get(False, list()), reduce(ior, new_facts, set())
+    return set(result.get(False, set())), reduce_ior(new_facts)
 
 
 def infer(rules: set[Rule], fact: Fact) -> tuple[set[Rule], set[Fact]]:

@@ -6,4 +6,4 @@
 * Store values that can't be represented in a variable like the amount of electrical consumption
 * Make the final conclusion downloadable from an endpoint
 * Store the conclusions in the database linked to a client 
-* Set and order for the values to be presented
+* refactor code

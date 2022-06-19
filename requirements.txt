@@ -2,3 +2,4 @@ pyyaml
 flask
 sqlalchemy
 flask-cors
+mypy

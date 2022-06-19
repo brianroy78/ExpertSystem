@@ -37,12 +37,9 @@ class Rule:
 class Inference:
     rules: set[Rule]
     facts: set[Fact]
-    ignored_variables: set[Variable]
-    current_variable: Variable
-    is_finished: bool
+    vars: list[Variable]
 
 
-@dataclass
-class Pair:
-    rules: set[Rule]
-    facts: set[Fact]
+Premises = frozenset[Fact]
+Conclusions = frozenset[Fact]
+Variables = set[Variable]

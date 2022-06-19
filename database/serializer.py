@@ -38,7 +38,7 @@ def table_to_dict(obj) -> dict:
     return result
 
 
-def get_relation(obj: Base, relation_name: str, transform: Callable) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+def get_relation(obj: Base, relation_name: str, transform) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
     relation_definition = getattr(obj, relation_name)
     if type(relation_definition) is InstrumentedList:
         return [
