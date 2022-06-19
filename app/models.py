@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import FrozenSet
 
 
 @dataclass(frozen=True, eq=True)
@@ -13,7 +12,7 @@ class Value:
 class Variable:
     id: int
     name: str
-    options: FrozenSet[Value]
+    options: frozenset[Value]
 
 
 @dataclass(frozen=True, eq=True)
@@ -24,8 +23,8 @@ class Fact:
 
 @dataclass(frozen=True, eq=True)
 class Rule:
-    premises: FrozenSet[Fact]
-    conclusions: FrozenSet[Fact]
+    premises: frozenset[Fact]
+    conclusions: frozenset[Fact]
 
     def __repr__(self):
         premises = [f'{p.variable.name} -> {p.value.name}' for p in self.premises]
