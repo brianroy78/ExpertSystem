@@ -2,7 +2,7 @@ from functools import reduce, partial
 from operator import iconcat
 from typing import Iterable, Callable, Optional
 
-from app.basic import get_premises_variables, get_conclusions_variables
+from app.basic import get_fathers_by_rules, get_children_by_rules
 from app.custom_functions import reduce_ior
 from app.models import Variable, Value, Rule
 from database import get_session
@@ -19,34 +19,15 @@ def to_variable(variable_table: VariableTable, values: dict[int, Value]) -> Vari
     return variable
 
 
-def premises_contains_variable(variable: Variable, rule: Rule) -> bool:
-    return variable in get_premises_variables(rule)
-
-
-def filter_variable_in_rules_premises(rules: set[Rule], variable: Variable) -> Iterable[Rule]:
-    return filter(partial(premises_contains_variable, variable), rules)
-
-
-def variables_to_rules(variables: set[Variable], rules: set[Rule]) -> Iterable[Iterable[Rule]]:
-    return map(partial(filter_variable_in_rules_premises, rules), variables)
-
-
 def get_roots_by_rules(rules: set[Rule], variable: Variable) -> set[Variable]:
     target_variables: set[Variable] = {variable}
     clone_rules = set(rules)
     while True:
-        rules_to_follow: list[Rule] = reduce(iconcat, variables_to_rules(target_variables, clone_rules), list())
-        if len(rules_to_follow) == 0:
+        get_fathers: Callable[[Variable], Iterable[Variable]] = partial(get_fathers_by_rules, clone_rules)
+        fathers_variables: list[Variable] = list(reduce_ior(map(get_fathers, target_variables)))
+        if len(fathers_variables) == 0:
             return target_variables
-        target_variables = reduce_ior(map(get_conclusions_variables, rules_to_follow))
-
-
-var_list = list[tuple[int, Variable]]
-vars_list = list[var_list]
-
-
-def get_lvl(tuple_: tuple) -> int:
-    return tuple_[0]
+        target_variables = set(fathers_variables)
 
 
 def from_table_to_model() -> tuple[set[Rule], list[Variable]]:
@@ -56,40 +37,27 @@ def from_table_to_model() -> tuple[set[Rule], list[Variable]]:
         variables: dict[int, Variable] = {v.id: to_variable(v, values) for v in session.query(VariableTable)}
         rules: set[Rule] = {
             Rule(
-                set([values[p.id] for p in r.premises]),
-                set([values[c.id] for c in r.conclusions])
+                {values[p.id] for p in r.premises},
+                {values[c.id] for c in r.conclusions}
             )
             for r in session.query(RuleTable)
         }
         get_roots: Callable[[Variable], set[Variable]] = partial(get_roots_by_rules, rules)
         roots: set[Variable] = reduce_ior(map(get_roots, variables.values()))
-        walk: Callable[[Variable], var_list] = partial(walk_by_lvl, partial(get_children_by_rules, rules))
-        variables_with_lvl: vars_list = list(map(walk, roots))
-        ordered_by_deep: vars_list = sorted(variables_with_lvl, key=len, reverse=True)
-        order_variables_set: Callable[[var_list], var_list] = partial(sorted, key=lambda o: o[0], reverse=True)
-        ordered_by_lvl: vars_list = list(map(order_variables_set, ordered_by_deep))
-        flatted: var_list = reduce(iconcat, ordered_by_lvl, list())
-        return rules, list(map(lambda e: e[1], flatted))
+        walk: Callable[[Variable], list[Variable]] = partial(walk_by_lvl, partial(get_children_by_rules, rules))
+        variables_with_lvl: list[list[Variable]] = list(map(walk, roots))
+        ordered_by_len: list[list[Variable]] = sorted(variables_with_lvl, key=len, reverse=True)
+        flatted: list[Variable] = reduce(iconcat, ordered_by_len, list())
+        return rules, flatted
 
 
-def conclusions_contains_variable(variable: Variable, rule: Rule) -> bool:
-    return variable in get_conclusions_variables(rule)
-
-
-def get_children_by_rules(rules: set[Rule], variable: Variable) -> list[Variable]:
-    children_rules: list[Rule] = list(filter(partial(conclusions_contains_variable, variable), rules))
-    if len(children_rules) == 0:
-        return []
-    return list(reduce_ior(map(get_premises_variables, children_rules)))
-
-
-def walk_by_lvl(get_children: Callable[[Variable], list[Variable]], root: Variable) -> list[tuple[int, Variable]]:
-    result: list[tuple[int, Variable]] = []
-    input_: list[tuple[int, Optional[Variable]]] = [(0, root)]
+def walk_by_lvl(get_children: Callable[[Variable], Iterable[Variable]], root: Variable) -> list[Variable]:
+    result: list[Variable] = []
+    input_: list[Optional[Variable]] = [root]
     while len(input_) > 0:
-        lvl, node = input_.pop(0)
+        node = input_.pop(0)
         if node is None:
             continue
-        result.append((lvl, node))
-        input_.extend(map(lambda n: (lvl + 1, n), get_children(node)))
-    return result
+        result.append(node)
+        input_.extend(get_children(node))
+    return result[::-1]

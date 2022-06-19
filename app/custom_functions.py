@@ -8,5 +8,5 @@ ReturnType = TypeVar('ReturnType')
 set_type = Union[set[ValueType], frozenset[ValueType]]
 
 
-def reduce_ior(elements: Iterable[set_type]) -> set[ValueType]:
+def reduce_ior(elements: Iterable[Iterable[ValueType]]) -> set[ValueType]:
     return reduce(ior, elements, set())

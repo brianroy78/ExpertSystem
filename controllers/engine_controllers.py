@@ -5,8 +5,8 @@ from uuid import uuid4
 
 from flask import Blueprint, request
 
-from app.basic import get_premises_variables, get_variable
-from app.converter import from_table_to_model, premises_contains_variable
+from app.basic import get_premises_variables, get_variable, premises_contains_variable
+from app.converter import from_table_to_model
 from app.custom_functions import reduce_ior
 from app.engine import infer
 from app.models import Variable, Inference, Rule, Value

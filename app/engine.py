@@ -1,18 +1,18 @@
 from functools import partial
 from typing import Iterable
 
-from app.basic import get_conclusions, get_premises_variables, premises_empty
+from app.basic import get_conclusions, get_premises_variables, premises_empty, duplicate_rule
 from app.custom_functions import reduce_ior
 from app.models import Rule, Value
 from app.utils import first, group_by, compose
 
 
 def update_rule(fact: Value, rule: Rule) -> Rule:
-    clone: Rule = rule
+    clone: Rule = duplicate_rule(rule)
     if fact in clone.premises:
-        clone = Rule(clone.premises - {fact}, clone.conclusions)
+        clone.premises -= {fact}
     if fact in clone.conclusions:
-        clone = Rule(clone.premises, clone.conclusions - {fact})
+        clone.conclusions -= {fact}
     return clone
 
 
