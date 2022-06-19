@@ -4,21 +4,19 @@ from typing import Iterable, Callable, Optional
 
 from app.basic import get_premises_variables, get_conclusions_variables
 from app.custom_functions import reduce_ior
-from app.models import Variable, Value, Rule, Fact
+from app.models import Variable, Value, Rule
 from database import get_session
-from database.tables import VariableTable, ValueTable, RuleTable, FactTable
+from database.tables import VariableTable, ValueTable, RuleTable
 
 
-def to_fact(fact: FactTable, variables: dict[int, Variable], values: dict[int, Value]) -> Fact:
-    return Fact(variables[fact.variable.id], values[fact.value.id])
+def to_variable(variable_table: VariableTable, values: dict[int, Value]) -> Variable:
+    variable = Variable(variable_table.name, set())
+    for value_table in variable_table.options:
+        value = values[value_table.id]
+        value.variable = variable
+        variable.options.add(value)
 
-
-def to_variable(variable: VariableTable, values: dict[int, Value]) -> Variable:
-    return Variable(
-        variable.id,
-        variable.name,
-        frozenset([values[v.id] for v in variable.options])
-    )
+    return variable
 
 
 def premises_contains_variable(variable: Variable, rule: Rule) -> bool:
@@ -53,12 +51,13 @@ def get_lvl(tuple_: tuple) -> int:
 
 def from_table_to_model() -> tuple[set[Rule], list[Variable]]:
     with get_session() as session:
-        values = {v.id: Value(v.id, v.name, v.order) for v in session.query(ValueTable)}
-        variables = {v.id: to_variable(v, values) for v in session.query(VariableTable)}
+        stub_var = Variable('', set())
+        values: dict[int, Value] = {v.id: Value(v.name, v.order, stub_var) for v in session.query(ValueTable)}
+        variables: dict[int, Variable] = {v.id: to_variable(v, values) for v in session.query(VariableTable)}
         rules: set[Rule] = {
             Rule(
-                frozenset([to_fact(p, variables, values) for p in r.premises]),
-                frozenset([to_fact(c, variables, values) for c in r.conclusions])
+                set([values[p.id] for p in r.premises]),
+                set([values[c.id] for c in r.conclusions])
             )
             for r in session.query(RuleTable)
         }

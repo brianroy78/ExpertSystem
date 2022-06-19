@@ -11,36 +11,28 @@ class ValueTable(Base):
     order = Column(Integer, nullable=False)
     parent_id = Column(Integer, ForeignKey("variable.id"))
 
+    variable = relation('VariableTable')
+
 
 class VariableTable(Base):
     __tablename__ = 'variable'
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True, nullable=False)
 
-    options = relation(ValueTable)
-
-
-class FactTable(Base):
-    __tablename__ = 'fact'
-    id = Column(Integer, primary_key=True)
-    variable_id = Column(Integer, ForeignKey('variable.id'), nullable=False)
-    value_id = Column(Integer, ForeignKey('value.id'), nullable=False)
-
-    variable = relation(VariableTable)
-    value = relation(ValueTable)
+    options = relation(ValueTable, overlaps="variable")
 
 
 premise = Table(
     'premise',
     Base.metadata,
-    Column('fact_id', ForeignKey('fact.id'), nullable=False),
+    Column('value_id', ForeignKey('value.id'), nullable=False),
     Column('rule_id', ForeignKey('rule.id'), nullable=False),
 )
 
 conclusion = Table(
     'conclusion',
     Base.metadata,
-    Column('fact_id', ForeignKey('fact.id'), nullable=False),
+    Column('value_id', ForeignKey('value.id'), nullable=False),
     Column('rule_id', ForeignKey('rule.id'), nullable=False),
 )
 
@@ -49,8 +41,8 @@ class RuleTable(Base):
     __tablename__ = 'rule'
     id = Column(Integer, primary_key=True)
 
-    premises = relation(FactTable, secondary=premise)
-    conclusions = relation(FactTable, secondary=conclusion)
+    premises = relation(ValueTable, secondary=premise)
+    conclusions = relation(ValueTable, secondary=conclusion)
 
 
 class ClientTable(Base):
@@ -65,7 +57,7 @@ class ClientTable(Base):
 selected_options = Table(
     'selected_options',
     Base.metadata,
-    Column('fact_id', ForeignKey('fact.id'), nullable=False),
+    Column('value_id', ForeignKey('value.id'), nullable=False),
     Column('inference_id', ForeignKey('inference.id'), nullable=False),
 )
 
@@ -75,6 +67,6 @@ class InferenceTable(Base):
     id = Column(Integer, primary_key=True)
     client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
 
-    selected_options = relation(FactTable, secondary=selected_options)
+    selected_options = relation(ValueTable, secondary=selected_options)
 
     client = relation(ClientTable)

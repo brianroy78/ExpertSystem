@@ -2,15 +2,16 @@ import os
 from configparser import ConfigParser
 
 from database import get_session, set_settings, Base, Data
-from database.tables import VariableTable, ValueTable, RuleTable, FactTable, ClientTable
+from database.tables import VariableTable, ValueTable, RuleTable, ClientTable
 
 
-def insert_var(db, var_name: str, options: list[str]) -> list[FactTable]:
-    var = VariableTable(name=var_name, options=[
-        ValueTable(name=op, order=index) for index, op in enumerate(options)
-    ])
+def insert_var(db, var_name: str, options: list[str]) -> list[ValueTable]:
+    var = VariableTable(
+        name=var_name, options=[
+            ValueTable(name=op, order=index) for index, op in enumerate(options)
+        ])
     db.add(var)
-    return [FactTable(variable=var, value=op) for op in var.options]
+    return var.options
 
 
 def insert_rule(db, premises, conclusions):

@@ -9,7 +9,7 @@ from app.basic import get_premises_variables, get_variable
 from app.converter import from_table_to_model, premises_contains_variable
 from app.custom_functions import reduce_ior
 from app.engine import infer
-from app.models import Variable, Inference, Rule, Fact, Value
+from app.models import Variable, Inference, Rule, Value
 from app.utils import not_in, compose
 from controllers.controllers_utils import as_json
 
@@ -20,17 +20,16 @@ inferences: dict[str, Inference] = dict()
 
 def variable_to_dict(variable: Variable) -> dict:
     return {
-        'id': variable.id,
         'name': variable.name,
         'options': [
-            {'id': op.id, 'name': op.name, 'order': op.order}
+            {'name': op.name, 'order': op.order}
             for op in variable.options
         ]
     }
 
 
 def parse_facts(inference: Inference) -> list[dict[str, str]]:
-    return [{'variable_name': f.variable.name, 'value_name': f.value.name} for f in inference.facts]
+    return [{'variable_name': f.variable.name, 'value_name': f.name} for f in inference.facts]
 
 
 def finish(identifier: str):
@@ -49,12 +48,12 @@ def inference_start():
     return as_json({'id': identifier, 'finished': False, 'variable': variable_to_dict(variables[0])})
 
 
-def is_equal(target_value_id, value: Value) -> bool:
-    return target_value_id == value.id
+def is_equal_name(target_value_name, value: Value) -> bool:
+    return target_value_name == value.name
 
 
-def get_fact(variable: Variable, value_id: int) -> Fact:
-    return Fact(variable, next(filter(partial(is_equal, value_id), variable.options)))
+def get_fact(variable: Variable, value_name: str) -> Value:
+    return next(filter(partial(is_equal_name, value_name), variable.options))
 
 
 def get_valid_var(is_valid: Callable, rule: Rule) -> Optional[Variable]:
@@ -77,9 +76,9 @@ def inference_respond() -> tuple:
         return ()
     identifier: str = request.json['id']
     inference: Inference = inferences[identifier]
-    value_id: Optional[int] = request.json['value_id']
+    value_name: Optional[str] = request.json['value_name']
     variable: Variable = inference.vars.pop(0)
-    if value_id is None:
+    if value_name is None:
         variable_in_rule = partial(premises_contains_variable, variable)
         target_fathers: Iterable[Rule] = filter(variable_in_rule, inference.rules)
         variable_not_in_rule = compose(variable_in_rule, not_)
@@ -93,7 +92,7 @@ def inference_respond() -> tuple:
 
         inference.vars = list(filter(is_not_orphan_and_brother, inference.vars))
     else:
-        rules, new_facts = infer(inference.rules, get_fact(variable, value_id))
+        rules, new_facts = infer(inference.rules, get_fact(variable, value_name))
         inference.facts |= new_facts
         inference.rules = rules
         concluded_vars = map(get_variable, inference.facts)

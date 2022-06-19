@@ -23,11 +23,6 @@ class LF(Generic[ValueType, ReturnType]):
         return LF(filter(func, self.value))
 
 
-def remove_from_frozen(elements: frozenset, element) -> frozenset:
-    clone: set = set(elements)
-    clone.remove(element)
-    return frozenset(clone)
-
 
 def first(elements: Union[frozenset, set, Iterable]):
     return next(iter(elements))

@@ -1,8 +1,8 @@
-from app.models import Fact, Variable, Rule, Conclusions, Variables
+from app.models import Variable, Rule, Conclusions, Variables, Value
 
 
-def get_variable(fact: Fact) -> Variable:
-    return fact.variable
+def get_variable(value: Value) -> Variable:
+    return value.variable
 
 
 def get_conclusions(rule: Rule) -> Conclusions:
