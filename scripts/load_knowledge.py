@@ -1,15 +1,22 @@
 import os
 from configparser import ConfigParser
+from functools import partial
+from typing import Callable, Iterable
 
+from app.constants import EMPTY_VALUE_STR
 from database import get_session, set_settings, Base, Data
 from database.tables import VariableTable, ValueTable, RuleTable, ClientTable
+from scripts.department_variables import add_department_questions
+from scripts.roof_variables import add_roof_questions
 
 
 def insert_var(db, var_name: str, options: list[str]) -> list[ValueTable]:
     var = VariableTable(
-        name=var_name, options=[
+        name=var_name,
+        options=[
             ValueTable(name=op, order=index) for index, op in enumerate(options)
         ])
+    var.options.append(ValueTable(name=EMPTY_VALUE_STR, order=len(options)))
     db.add(var)
     return var.options
 
@@ -29,23 +36,28 @@ def load():
         print("The db does not exist!")
     Base.metadata.create_all(Data.ENGINE)
     with get_session() as session:
-        system_type = insert_var(
-            session,
+        insert = partial(insert_var, session)
+        insert_rule_: Callable[[Iterable[ValueTable], Iterable[ValueTable]], None] = partial(insert_rule, session)
+        on_grid, off_grid, pumping, _ = insert(
             'tipo de sistema',
             ['ON GRID', 'OFF GRID', 'Bombeo']
         )
-        on_grid, off_grid, pumping = system_type
-        yes_on_grid, no_on_grid = insert_var(
-            session,
+
+        yes_on_grid, no_on_grid, _ = insert(
             'el lugar tiene conección a la red eléctica',
             ['Sí', 'No']
         )
 
-        insert_rule(session, [yes_on_grid], [on_grid])
-        insert_rule(session, [no_on_grid], [off_grid])
+        yes_pumping, no_pumping, skip_pumping = insert(
+            'Es un sistema de bombeo',
+            ['Sí', 'No']
+        )
 
-        hot_days_consumption = insert_var(
-            session,
+        insert_rule_([yes_pumping], [pumping])
+        insert_rule_([yes_on_grid], [on_grid])
+        insert_rule_([no_on_grid], [off_grid])
+
+        insert(
             'consumo eléctrico promedio por día en Primavera/Verano',
             [
                 'Entre 5KWH - 10KWH',
@@ -57,8 +69,7 @@ def load():
             ]
         )
 
-        cold_days_consumption = insert_var(
-            session,
+        insert(
             'consumo eléctrico promedio por día en Otoño/Invierno',
             [
                 'Entre 5KWH - 10KWH',
@@ -69,6 +80,21 @@ def load():
                 'Entre 30KWH - 35KWH',
             ]
         )
+
+        installation_required, no_installation, skipped_installation = insert(
+            'Require servicio de instalación',
+            ['Sí', 'No']
+        )
+
+        add_roof_questions(
+            insert,
+            insert_rule_,
+            no_installation,
+            skipped_installation,
+            pumping
+        )
+
+        add_department_questions(insert, insert_rule_)
 
         session.add(
             ClientTable(

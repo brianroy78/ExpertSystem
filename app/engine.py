@@ -16,6 +16,9 @@ def update_rule(fact: Value, rule: Rule) -> Rule:
     return clone
 
 
+# alternate implementation:
+# if fact's variable in conclusion's variable and fact not in conclusion
+# rule out!
 def is_ruled_out(fact: Value, rule: Rule) -> bool:
     if len(rule.conclusions) == 1 and fact.variable == first(rule.conclusions).variable:
         return False
