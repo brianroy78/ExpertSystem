@@ -5,8 +5,7 @@ def add_roof_questions(
         var_adder: Callable,
         rule_adder: Callable,
         no_installation,
-        skipped_installation,
-        pumping_system
+        skipped_installation
 ):
     flat, flat1, regular, tilted, no_roof = var_adder(
         'forma del techo',
@@ -57,6 +56,5 @@ def add_roof_questions(
         ]
     )
 
-    rule_adder([pumping_system], [no_roof, no_direction, no_shadow, no_size_roof, no_material_roof])
     rule_adder([no_installation], [no_roof, no_direction, no_shadow, no_size_roof, no_material_roof])
     rule_adder([skipped_installation], [no_roof, no_direction, no_shadow, no_size_roof, no_material_roof])

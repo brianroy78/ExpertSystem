@@ -1,13 +1,13 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean
 from sqlalchemy.orm import relation
 
 from database import Base
 
 
-class ValueTable(Base):
-    __tablename__ = 'value'
+class OptionTable(Base):
+    __tablename__ = 'option'
     id = Column(Integer, primary_key=True)
-    name = Column(String(80), nullable=False)
+    value = Column(String(80), nullable=False)
     order = Column(Integer, nullable=False)
     parent_id = Column(Integer, ForeignKey("variable.id"))
 
@@ -18,21 +18,22 @@ class VariableTable(Base):
     __tablename__ = 'variable'
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True, nullable=False)
+    is_scalar = Column(Boolean, nullable=False, default=False)
 
-    options = relation(ValueTable, overlaps="variable")
+    options = relation(OptionTable, overlaps="variable")
 
 
 premise = Table(
     'premise',
     Base.metadata,
-    Column('value_id', ForeignKey('value.id'), nullable=False),
+    Column('option_id', ForeignKey('option.id'), nullable=False),
     Column('rule_id', ForeignKey('rule.id'), nullable=False),
 )
 
 conclusion = Table(
     'conclusion',
     Base.metadata,
-    Column('value_id', ForeignKey('value.id'), nullable=False),
+    Column('option_id', ForeignKey('option.id'), nullable=False),
     Column('rule_id', ForeignKey('rule.id'), nullable=False),
 )
 
@@ -41,8 +42,8 @@ class RuleTable(Base):
     __tablename__ = 'rule'
     id = Column(Integer, primary_key=True)
 
-    premises = relation(ValueTable, secondary=premise)
-    conclusions = relation(ValueTable, secondary=conclusion)
+    premises = relation(OptionTable, secondary=premise)
+    conclusions = relation(OptionTable, secondary=conclusion)
 
 
 class ClientTable(Base):
@@ -57,7 +58,7 @@ class ClientTable(Base):
 selected_options = Table(
     'selected_options',
     Base.metadata,
-    Column('value_id', ForeignKey('value.id'), nullable=False),
+    Column('option_id', ForeignKey('option.id'), nullable=False),
     Column('inference_id', ForeignKey('inference.id'), nullable=False),
 )
 
@@ -67,6 +68,6 @@ class InferenceTable(Base):
     id = Column(Integer, primary_key=True)
     client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
 
-    selected_options = relation(ValueTable, secondary=selected_options)
+    selected_options = relation(OptionTable, secondary=selected_options)
 
     client = relation(ClientTable)

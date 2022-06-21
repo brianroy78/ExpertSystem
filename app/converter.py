@@ -4,13 +4,13 @@ from typing import Iterable, Callable, Optional
 
 from app.basic import get_fathers_by_rules, get_children_by_rules
 from app.custom_functions import reduce_ior
-from app.models import Variable, Value, Rule
+from app.models import Variable, Option, Rule
 from database import get_session
-from database.tables import VariableTable, ValueTable, RuleTable
+from database.tables import VariableTable, OptionTable, RuleTable
 
 
-def to_variable(variable_table: VariableTable, values: dict[int, Value]) -> Variable:
-    variable = Variable(variable_table.name, set())
+def to_variable(variable_table: VariableTable, values: dict[int, Option]) -> Variable:
+    variable = Variable(variable_table.name, set(), variable_table.is_scalar)
     for value_table in variable_table.options:
         value = values[value_table.id]
         value.variable = variable
@@ -32,8 +32,8 @@ def get_roots_by_rules(rules: set[Rule], variable: Variable) -> set[Variable]:
 
 def from_table_to_model() -> tuple[set[Rule], list[Variable]]:
     with get_session() as session:
-        stub_var = Variable('', set())
-        values: dict[int, Value] = {v.id: Value(v.name, v.order, stub_var) for v in session.query(ValueTable)}
+        stub_var = Variable('', set(), False)
+        values: dict[int, Option] = {v.id: Option(v.value, v.order, stub_var) for v in session.query(OptionTable)}
         variables: dict[int, Variable] = {v.id: to_variable(v, values) for v in session.query(VariableTable)}
         rules: set[Rule] = {
             Rule(

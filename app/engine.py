@@ -3,11 +3,11 @@ from typing import Iterable
 
 from app.basic import get_conclusions, get_premises_variables, premises_empty, duplicate_rule
 from app.custom_functions import reduce_ior
-from app.models import Rule, Value
+from app.models import Rule, Option
 from app.utils import first, group_by, compose
 
 
-def update_rule(fact: Value, rule: Rule) -> Rule:
+def update_rule(fact: Option, rule: Rule) -> Rule:
     clone: Rule = duplicate_rule(rule)
     if fact in clone.premises:
         clone.premises -= {fact}
@@ -19,23 +19,23 @@ def update_rule(fact: Value, rule: Rule) -> Rule:
 # alternate implementation:
 # if fact's variable in conclusion's variable and fact not in conclusion
 # rule out!
-def is_ruled_out(fact: Value, rule: Rule) -> bool:
+def is_ruled_out(fact: Option, rule: Rule) -> bool:
     if len(rule.conclusions) == 1 and fact.variable == first(rule.conclusions).variable:
         return False
     return fact.variable not in get_premises_variables(rule) or fact in rule.premises
 
 
-def _infer(rules: set[Rule], fact: Value) -> tuple[set[Rule], set[Value]]:
+def _infer(rules: set[Rule], fact: Option) -> tuple[set[Rule], set[Option]]:
     result: dict[bool, list[Rule]] = compose(
         partial(filter, partial(is_ruled_out, fact)),
         partial(map, partial(update_rule, fact)),
         partial(group_by, premises_empty)
     )(rules)
-    new_facts: Iterable[set[Value]] = map(get_conclusions, result.get(True, list()))
+    new_facts: Iterable[set[Option]] = map(get_conclusions, result.get(True, list()))
     return set(result.get(False, set())), reduce_ior(new_facts)
 
 
-def infer(rules: set[Rule], fact: Value) -> tuple[set[Rule], set[Value]]:
+def infer(rules: set[Rule], fact: Option) -> tuple[set[Rule], set[Option]]:
     input_facts = {fact}
     result_facts = {fact}
     result_rules = set(rules)

@@ -2,10 +2,10 @@ from functools import partial
 from typing import Iterable
 
 from app.custom_functions import reduce_ior
-from app.models import Variable, Rule, Conclusions, Variables, Value
+from app.models import Variable, Rule, Conclusions, Variables, Option
 
 
-def get_variable(value: Value) -> Variable:
+def get_variable(value: Option) -> Variable:
     return value.variable
 
 
