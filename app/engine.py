@@ -7,8 +7,23 @@ from app.models import Rule, Option
 from app.utils import first, group_by, compose
 
 
+def trigger_rule(rule: Rule) -> set[Option]:
+    if rule.formula is None:
+        return get_conclusions(rule)
+    result: dict = {}
+    exec(f'result={rule.formula}', result)
+    conclusion: Option = rule.conclusions.pop()
+    if conclusion.variable.is_scalar:
+        conclusion.scalar = result['result']
+    else:
+        conclusion.value = result['result']
+    return {conclusion}
+
+
 def update_rule(fact: Option, rule: Rule) -> Rule:
     clone: Rule = duplicate_rule(rule)
+    if clone.formula is not None and fact.variable in get_premises_variables(clone):
+        clone.formula = clone.formula.replace(fact.variable.id, fact.scalar)
     if fact in clone.premises:
         clone.premises -= {fact}
     if fact in clone.conclusions:
@@ -31,7 +46,7 @@ def _infer(rules: set[Rule], fact: Option) -> tuple[set[Rule], set[Option]]:
         partial(map, partial(update_rule, fact)),
         partial(group_by, premises_empty)
     )(rules)
-    new_facts: Iterable[set[Option]] = map(get_conclusions, result.get(True, list()))
+    new_facts: Iterable[set[Option]] = map(trigger_rule, result.get(True, set()))
     return set(result.get(False, set())), reduce_ior(new_facts)
 
 

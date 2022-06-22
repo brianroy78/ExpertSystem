@@ -8,7 +8,8 @@ def add_roof_questions(
         skipped_installation
 ):
     flat, flat1, regular, tilted, no_roof = var_adder(
-        'forma del techo',
+        'roof_tilt',
+        '¿Qué tan inclinado es el techp?',
         [
             'Plano',
             'Casi Plano (15º)',
@@ -18,7 +19,8 @@ def add_roof_questions(
     )
 
     north, east, south, west, no_direction = var_adder(
-        'dirección del techo con relación al sol',
+        'sun_orientation',
+        '¿Cuál es la dirección del techo con relación al sol?',
         [
             'Norte (0º)',
             'Este (90º)',
@@ -28,7 +30,8 @@ def add_roof_questions(
     )
 
     small_roof, medium_roof, large_roof, no_size_roof = var_adder(
-        'superficie base del techo/constucción',
+        'roof_surface',
+        '¿Cuál es la superficie base del techo/construcción?',
         [
             'menos de 80 mtrs2 (8m x 10)',
             'menos de 150 mtrs2 (10m x 15m)',
@@ -37,7 +40,8 @@ def add_roof_questions(
     )
 
     tiles, calamine, brick, no_material_roof = var_adder(
-        'material del techo',
+        'roof_material',
+        '¿De qué material es el techo?',
         [
             'Tejas',
             'Calamina',
@@ -48,7 +52,8 @@ def add_roof_questions(
     rule_adder([flat], [no_direction])
 
     _, _, _, no_shadow = var_adder(
-        'Sombra en el techo',
+        'roof_shadow',
+        '¿Cuánta sombra le da al techo?',
         [
             'Sin Sombra',
             'Alguna Sombra',

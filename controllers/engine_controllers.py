@@ -18,7 +18,7 @@ inferences: dict[str, Inference] = dict()
 
 def variable_to_dict(variable: Variable) -> dict:
     return {
-        'name': variable.name,
+        'question': variable.question,
         'isScalar': variable.is_scalar,
         'options': [
             {'value': op.value, 'order': op.order}
@@ -28,7 +28,12 @@ def variable_to_dict(variable: Variable) -> dict:
 
 
 def parse_facts(inference: Inference) -> list[dict[str, str]]:
-    return [{'variable_name': f.variable.name, 'value_name': f.value} for f in inference.facts]
+    return [
+        {
+            'variable_name': f.variable.question,
+            'value_name': f.value if not f.variable.is_scalar else str(f.scalar)
+        } for f in inference.facts
+    ]
 
 
 def finish(identifier: str):
@@ -54,7 +59,7 @@ def is_equal_name(target_value_name, value: Option) -> bool:
 def is_equal_scalar(target_scalar, value: Option) -> bool:
     if target_scalar == EMPTY_VALUE_STR == value.value:
         return True
-    if target_scalar != EMPTY_VALUE_STR:
+    if target_scalar != EMPTY_VALUE_STR and value.value != EMPTY_VALUE_STR:
         return True
     return False
 
@@ -71,7 +76,7 @@ def inference_respond() -> tuple:
     compare = is_equal_scalar if variable.is_scalar else is_equal_name
     value: Option = next(filter(partial(compare, value_name), options))
     if variable.is_scalar and value.value != EMPTY_VALUE_STR:
-        value.value = value_name
+        value.scalar = value_name
     rules, new_facts = infer(inference.rules, value)
     inference.facts |= new_facts
     inference.rules = rules

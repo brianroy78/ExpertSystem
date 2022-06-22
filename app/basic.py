@@ -28,7 +28,7 @@ def get_conclusions_variables(rule: Rule) -> Variables:
 # copy
 
 def duplicate_rule(rule: Rule) -> Rule:
-    return Rule(set(rule.premises), set(rule.conclusions))
+    return Rule(set(rule.premises), set(rule.conclusions), rule.formula)
 
 
 # contains

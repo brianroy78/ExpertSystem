@@ -10,7 +10,7 @@ from database.tables import VariableTable, OptionTable, RuleTable
 
 
 def to_variable(variable_table: VariableTable, values: dict[int, Option]) -> Variable:
-    variable = Variable(variable_table.name, set(), variable_table.is_scalar)
+    variable = Variable(variable_table.id, variable_table.question, set(), variable_table.is_scalar)
     for value_table in variable_table.options:
         value = values[value_table.id]
         value.variable = variable
@@ -32,13 +32,14 @@ def get_roots_by_rules(rules: set[Rule], variable: Variable) -> set[Variable]:
 
 def from_table_to_model() -> tuple[set[Rule], list[Variable]]:
     with get_session() as session:
-        stub_var = Variable('', set(), False)
-        values: dict[int, Option] = {v.id: Option(v.value, v.order, stub_var) for v in session.query(OptionTable)}
+        stub_var = Variable('', '', set(), False)
+        values: dict[int, Option] = {v.id: Option(v.value, .0, v.order, stub_var) for v in session.query(OptionTable)}
         variables: dict[int, Variable] = {v.id: to_variable(v, values) for v in session.query(VariableTable)}
         rules: set[Rule] = {
             Rule(
                 {values[p.id] for p in r.premises},
-                {values[c.id] for c in r.conclusions}
+                {values[c.id] for c in r.conclusions},
+                r.formula
             )
             for r in session.query(RuleTable)
         }

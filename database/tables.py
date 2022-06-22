@@ -16,8 +16,8 @@ class OptionTable(Base):
 
 class VariableTable(Base):
     __tablename__ = 'variable'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(80), unique=True, nullable=False)
+    id = Column(String(64), primary_key=True)
+    question = Column(String(128), unique=True, nullable=False)
     is_scalar = Column(Boolean, nullable=False, default=False)
 
     options = relation(OptionTable, overlaps="variable")
@@ -34,13 +34,14 @@ conclusion = Table(
     'conclusion',
     Base.metadata,
     Column('option_id', ForeignKey('option.id'), nullable=False),
-    Column('rule_id', ForeignKey('rule.id'), nullable=False),
+    Column('rule_id', ForeignKey('rule.id'), nullable=False)
 )
 
 
 class RuleTable(Base):
     __tablename__ = 'rule'
     id = Column(Integer, primary_key=True)
+    formula = Column(String(256))
 
     premises = relation(OptionTable, secondary=premise)
     conclusions = relation(OptionTable, secondary=conclusion)

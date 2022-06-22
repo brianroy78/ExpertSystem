@@ -1,14 +1,16 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
 class Option:
     value: str
+    scalar: str
     order: int
     variable: 'Variable'
 
     def __hash__(self):
-        return hash((self.value, self.variable.name))
+        return hash((self.value, self.variable.id))
 
     def __eq__(self, other: object):
         if not isinstance(other, Option):
@@ -18,26 +20,28 @@ class Option:
 
 @dataclass
 class Variable:
-    name: str
+    id: str
+    question: str
     options: set[Option]
     is_scalar: bool
 
     def __hash__(self):
-        return hash(self.name)
+        return hash(self.id)
 
     def __eq__(self, other: object):
         if not isinstance(other, Variable):
             raise NotImplementedError()
-        return self.name == other.name
+        return self.id == other.id
 
 
 @dataclass
 class Rule:
     premises: set[Option]
     conclusions: set[Option]
+    formula: Optional[str]
 
     def __hash__(self):
-        return hash((tuple(self.premises), tuple(self.conclusions)))
+        return hash((tuple(self.premises), tuple(self.conclusions), self.formula))
 
     def __eq__(self, other):
         if not isinstance(other, Rule):
@@ -45,8 +49,8 @@ class Rule:
         return tuple(self.premises) == tuple(other.premises) and tuple(self.conclusions) == tuple(other.conclusions)
 
     def __repr__(self):
-        premises = [f'{p.variable.name} -> {p.value}' for p in self.premises]
-        conclusions = [f'{c.variable.name} -> {c.value}' for c in self.conclusions]
+        premises = [f'{p.variable.question} -> {p.value}' for p in self.premises]
+        conclusions = [f'{c.variable.question} -> {c.value}' for c in self.conclusions]
         return f'{",".join(premises)} ==> {",".join(conclusions)}'
 
 

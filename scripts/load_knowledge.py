@@ -1,7 +1,7 @@
 import os
 from configparser import ConfigParser
 from functools import partial
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 from app.constants import EMPTY_VALUE_STR
 from database import get_session, set_settings, Base, Data
@@ -10,9 +10,10 @@ from scripts.department_variables import add_department_questions
 from scripts.roof_variables import add_roof_questions
 
 
-def insert_var(db, var_name: str, options: list[str], is_scalar: bool = False) -> list[OptionTable]:
+def insert_var(db, id_: str, question: str, options: list[str], is_scalar: bool = False) -> list[OptionTable]:
     var = VariableTable(
-        name=var_name,
+        id=id_,
+        question=question,
         is_scalar=is_scalar,
         options=[
             OptionTable(value=op, order=index) for index, op in enumerate(options)
@@ -22,8 +23,8 @@ def insert_var(db, var_name: str, options: list[str], is_scalar: bool = False) -
     return var.options
 
 
-def insert_rule(db, premises, conclusions):
-    db.add(RuleTable(premises=premises, conclusions=conclusions))
+def insert_rule(db, premises, conclusions, formula: Optional[str] = None):
+    db.add(RuleTable(premises=premises, conclusions=conclusions, formula=formula))
 
 
 def load():
@@ -38,23 +39,25 @@ def load():
     Base.metadata.create_all(Data.ENGINE)
     with get_session() as session:
         insert = partial(insert_var, session)
-        insert_rule_: Callable[[Iterable[OptionTable], Iterable[OptionTable]], None] = partial(insert_rule, session)
-        on_grid, off_grid, pumping, _ = insert(
-            'tipo de sistema',
-            ['ON GRID', 'OFF GRID', 'Bombeo']
+        insert_rule_ = partial(insert_rule, session)
+        on_grid, off_grid, _ = insert(
+            'system_type',
+            '¿Que tipo de sistema és?',
+            ['ON GRID', 'OFF GRID']
         )
 
         yes_on_grid, no_on_grid, _ = insert(
-            'el lugar tiene conección a la red eléctica',
+            'is_on_grid',
+            '¿El lugar tiene conección a la red eléctica?',
             ['Sí', 'No']
         )
 
-        yes_pumping, no_pumping, skip_pumping = insert(
-            'Es un sistema de bombeo',
+        insert(
+            'is_pumping_system',
+            '¿Es un sistema de bombeo?',
             ['Sí', 'No']
         )
 
-        insert_rule_([yes_pumping], [pumping])
         insert_rule_([yes_on_grid], [on_grid])
         insert_rule_([no_on_grid], [off_grid])
 
@@ -82,12 +85,31 @@ def load():
         #     ]
         # )
         cep, empty_cep = insert(
-            'consumo eléctrico promedio por día (KWH)',
+            'average_electrical_consumption',
+            '¿Cuanto es el consumo eléctrico promedio al año (KWH)?',
             ['cep'], True
         )
 
+        crep, empty_crep = insert(
+            'real_average_electrical_consumption',
+            '¿Cuanto es el consumo real eléctrico promedio al año (KWH)?',
+            ['crep'], True
+        )
+
+        insert_rule_([cep], [crep], 'average_electrical_consumption/2')
+
+        high, medium, low, no_classification = insert(
+            'classification_average_electrical_consumption',
+            '¿Cual es la clasificacion del eléctrico promedio al año (KWH)?',
+            ['Alto', 'Medio', 'Bajo'], True
+        )
+
+        insert_rule_([cep], [high], '')
+
+
         installation_required, no_installation, skipped_installation = insert(
-            'Require servicio de instalación',
+            'require_installation',
+            '¿Require servicio de instalación?',
             ['Sí', 'No']
         )
 

@@ -21,6 +21,8 @@
    * If all the values match with the given ones the conclusions becomes facts
    * A rule could trigger multiple facts
    * If a given value contradicts a premise the rule is removed
+   * A rule can be a formula
+   * if a rule is a formula, it only conclude one variable
 
 ## Features
  * If you want to emulate ruling out variables just set it to the empty option the variable

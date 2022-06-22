@@ -6,7 +6,8 @@ def add_department_questions(
         rule_adder: Callable
 ):
     var_adder(
-        'departamento',
+        'department',
+        '¿En qué departamento se encuentra el lugar?',
         [
             'Beni',
             'Chuquisaca',
