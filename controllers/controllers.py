@@ -5,7 +5,7 @@ from flask import Blueprint, request
 from controllers.controllers_utils import as_json, return_ok
 from database import get_session, Base
 from database.serializer import unpack, query_all
-from database.tables import VariableTable, OptionTable, RuleTable, ClientTable, InferenceTable
+from database.tables import VariableTable, OptionTable, RuleTable, ClientTable, InferenceTable, DeviceTable
 
 main_blueprint = Blueprint('main', __name__)
 
@@ -14,7 +14,8 @@ tables: Dict[str, Base] = {
     'value': OptionTable,
     'rule': RuleTable,
     'client': ClientTable,
-    'inference': InferenceTable
+    'inference': InferenceTable,
+    'device': DeviceTable,
 }
 
 

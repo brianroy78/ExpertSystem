@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean, Float
 from sqlalchemy.orm import relation
 
 from database import Base
@@ -72,3 +72,13 @@ class InferenceTable(Base):
     selected_options = relation(OptionTable, secondary=selected_options)
 
     client = relation(ClientTable)
+
+
+class DeviceTable(Base):
+    __tablename__ = 'device'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32), nullable=False)
+    category = Column(String(32), nullable=False)
+    rated_power = Column(Float, nullable=False)
+    bootstrap_factor = Column(Float, nullable=False)
+    actual_power = Column(Float, nullable=False)

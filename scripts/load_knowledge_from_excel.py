@@ -29,7 +29,7 @@ def load():
     # Base.metadata.create_all(Data.ENGINE)
     with get_session() as session:
         pass
-        # nationality_facts = insert_var(
+        # nationality_facts = insert_variable(
         #     session,
         #     'nacionalidad',
         #     [
@@ -39,7 +39,7 @@ def load():
         #     ]
         # )
         # bolivian, brazilian, peruvian = nationality_facts
-        # birth_place_facts = insert_var(
+        # birth_place_facts = insert_variable(
         #     session,
         #     'lugar de nacimiento',
         #     [
@@ -51,6 +51,6 @@ def load():
         #
         # saint, river, lim = birth_place_facts
         #
-        # insert_rule(session, [saint], [bolivian])
-        # insert_rule(session, [river], [brazilian])
-        # insert_rule(session, [lim], [peruvian])
+        # insert_rule_using(session, [saint], [bolivian])
+        # insert_rule_using(session, [river], [brazilian])
+        # insert_rule_using(session, [lim], [peruvian])

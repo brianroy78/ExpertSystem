@@ -23,13 +23,12 @@ class LF(Generic[ValueType, ReturnType]):
         return LF(filter(func, self.value))
 
 
-
 def first(elements: Union[frozenset, set, Iterable]):
     return next(iter(elements))
 
 
 def group_by(key: Callable, iterable: Iterable) -> dict:
-    result = dict()
+    result: dict = dict()
     for key, groups in groupby(iterable, key):
         if key not in result:
             result[key] = list()
@@ -39,9 +38,10 @@ def group_by(key: Callable, iterable: Iterable) -> dict:
 
 def compose(*callables: Callable) -> Callable:
     callables_ = list(callables)
+    first_ = callables_.pop(0)
 
     def composed(*args, **kwargs) -> ReturnType:
-        result = callables_.pop(0)(*args, **kwargs)
+        result = first_(*args, **kwargs)
         for func in callables_:
             result = func(result)
         return result

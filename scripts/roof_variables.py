@@ -9,7 +9,7 @@ def add_roof_questions(
 ):
     flat, flat1, regular, tilted, no_roof = var_adder(
         'roof_tilt',
-        '¿Qué tan inclinado es el techp?',
+        '¿Qué tan inclinado es el techo?',
         [
             'Plano',
             'Casi Plano (15º)',
@@ -18,14 +18,13 @@ def add_roof_questions(
         ]
     )
 
-    north, east, south, west, no_direction = var_adder(
+    direct, diagonal, side, no_direction = var_adder(
         'sun_orientation',
-        '¿Cuál es la dirección del techo con relación al sol?',
+        'El techo tiene una cara ¿Cuál es la dirección del sol apuntando a la cara del techo?',
         [
-            'Norte (0º)',
-            'Este (90º)',
-            'Sur (180º)',
-            'Oeste (270º)'
+            'Directo a la cara (0º)',
+            'Diagonal (45º)',
+            'De costado (90º)'
         ]
     )
 
