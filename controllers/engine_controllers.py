@@ -1,17 +1,18 @@
 from functools import partial
+from typing import Optional
 from uuid import uuid4
 
 from flask import Blueprint, request
 
 from app.basic import get_variable
 from app.constants import EMPTY_VALUE_STR
-from app.converter import from_table_to_model
+from app.converter import from_table_to_model, to_option
 from app.engine import infer
 from app.models import Variable, Inference, Option
 from app.utils import not_in
 from controllers.controllers_utils import as_json
 from database import get_session
-from database.tables import QuotationTable, SelectedOptionTable
+from database.tables import QuotationTable, SelectedOptionTable, OptionTable
 
 engine_blueprint = Blueprint('engine', __name__)
 
@@ -54,6 +55,54 @@ def inference_start():
     identifier = str(uuid4())
     inferences[identifier] = Inference(rules, set(), variables, quotation_id)
     return as_json({'id': identifier, 'finished': False, 'variable': variable_to_dict(variables[0])})
+
+
+def equal_var_id(target_var_id: str, variable: Variable) -> bool:
+    return variable.id == target_var_id
+
+
+def get_selected_option_order(selected_option: SelectedOptionTable) -> int:
+    return selected_option.order
+
+
+def forward_to(inference: Inference, selected_option_id: int) -> Inference:
+    with get_session() as db:
+        quotation: QuotationTable = db.query(QuotationTable).get(inference.quotation_id)
+        sorted_options = sorted(quotation.selected_options, key=get_selected_option_order)
+        last_order = 0
+        for stored_option in sorted_options:
+            last_order = stored_option.order
+            if stored_option.id == selected_option_id:
+                break
+            option_table: OptionTable = stored_option.option
+            variable_id: str = option_table.variable.id
+            variable: Optional[Variable] = next(filter(partial(equal_var_id, variable_id), inference.vars), None)
+            if variable is None:
+                continue
+            option: Option = to_option(stored_option, option_table, variable)
+            rules, new_facts = infer(inference.rules, option)
+            inference.rules = rules
+            inference.facts |= new_facts
+            concluded_vars: set[Variable] = set(map(get_variable, inference.facts))
+            inference.vars = list(filter(partial(not_in, concluded_vars), inference.vars))
+        db.query(SelectedOptionTable). \
+            filter(SelectedOptionTable.quotation_id == inference.quotation_id). \
+            filter(SelectedOptionTable.order >= last_order).delete()
+        db.commit()
+    return inference
+
+
+@engine_blueprint.route('/inference/start/from', methods=['POST'])
+def inference_start_from():
+    quotation_id: str = request.json['quotation_id']
+    selected_option_id: int = request.json['selected_option_id']
+    rules, variables = from_table_to_model()
+    if len(rules) == 0:
+        return as_json({'finished': True, 'conclusions': []})
+    identifier = str(uuid4())
+    inference = forward_to(Inference(rules, set(), variables, quotation_id), selected_option_id)
+    inferences[identifier] = inference
+    return as_json({'id': identifier, 'finished': False, 'variable': variable_to_dict(inference.vars[0])})
 
 
 def is_equal_name(target_value_name, value: Option) -> bool:

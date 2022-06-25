@@ -66,6 +66,8 @@ class SelectedOptionTable(Base):
     quotation_id = Column(Integer, ForeignKey("quotation.id"), nullable=False)
     option_id = Column(Integer, ForeignKey("option.id"), nullable=False)
 
+    option = relation(OptionTable)
+
 
 class SelectedDeviceTable(Base):
     __tablename__ = 'selected_device'
@@ -82,8 +84,8 @@ class QuotationTable(Base):
     creation_datetime = Column(DateTime, nullable=False, default=datetime.now)
     client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
 
-    selected_options = relation(SelectedOptionTable)
-    selected_devices = relation(SelectedDeviceTable)
+    selected_options = relation(SelectedOptionTable, cascade="all, delete-orphan")
+    selected_devices = relation(SelectedDeviceTable, cascade="all, delete-orphan")
     client = relation(ClientTable)
 
 

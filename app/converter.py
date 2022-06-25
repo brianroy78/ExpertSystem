@@ -6,7 +6,17 @@ from app.basic import get_fathers_by_rules, get_children_by_rules
 from app.custom_functions import reduce_or
 from app.models import Variable, Option, Rule
 from database import get_session
-from database.tables import VariableTable, OptionTable, RuleTable
+from database.tables import VariableTable, OptionTable, RuleTable, SelectedOptionTable
+
+
+def to_option(selected_option: SelectedOptionTable, option_table: OptionTable, variable: Variable) -> Option:
+    return Option(
+        option_table.id,
+        option_table.value,
+        selected_option.scalar,
+        option_table.order,
+        variable
+    )
 
 
 def to_variable(variable_table: VariableTable, values: dict[int, Option]) -> Variable:
