@@ -2,7 +2,7 @@ from functools import partial
 from typing import Iterable
 
 from app.basic import get_conclusions, get_premises_variables, premises_empty, duplicate_rule
-from app.custom_functions import reduce_ior
+from app.custom_functions import reduce_or
 from app.models import Rule, Option
 from app.utils import first, group_by, compose
 
@@ -23,7 +23,7 @@ def trigger_rule(rule: Rule) -> set[Option]:
 def update_rule(fact: Option, rule: Rule) -> Rule:
     clone: Rule = duplicate_rule(rule)
     if clone.formula is not None and fact.variable in get_premises_variables(clone):
-        clone.formula = clone.formula.replace(fact.variable.id, fact.scalar)
+        clone.formula = clone.formula.replace(fact.variable.id, str(fact.scalar))
     if fact in clone.premises:
         clone.premises -= {fact}
     if fact in clone.conclusions:
@@ -47,7 +47,7 @@ def _infer(rules: set[Rule], fact: Option) -> tuple[set[Rule], set[Option]]:
         partial(group_by, premises_empty)
     )(rules)
     new_facts: Iterable[set[Option]] = map(trigger_rule, result.get(True, set()))
-    return set(result.get(False, set())), reduce_ior(new_facts)
+    return set(result.get(False, set())), reduce_or(new_facts)
 
 
 def infer(rules: set[Rule], fact: Option) -> tuple[set[Rule], set[Option]]:

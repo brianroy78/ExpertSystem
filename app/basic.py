@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Iterable
 
-from app.custom_functions import reduce_ior
+from app.custom_functions import reduce_or
 from app.models import Variable, Rule, Conclusions, Variables, Option
 
 
@@ -54,8 +54,8 @@ def filter_variable_in_conclusions(rules: set[Rule], variable: Variable) -> Iter
 # graph
 
 def get_fathers_by_rules(rules: set[Rule], variable: Variable) -> Iterable[Variable]:
-    return reduce_ior(map(get_conclusions_variables, filter_variable_in_premises(rules, variable)))
+    return reduce_or(map(get_conclusions_variables, filter_variable_in_premises(rules, variable)))
 
 
 def get_children_by_rules(rules: set[Rule], variable: Variable) -> Iterable[Variable]:
-    return reduce_ior(map(get_premises_variables, filter_variable_in_conclusions(rules, variable)))
+    return reduce_or(map(get_premises_variables, filter_variable_in_conclusions(rules, variable)))

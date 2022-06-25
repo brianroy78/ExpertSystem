@@ -4,6 +4,7 @@ from typing import Optional
 
 @dataclass
 class Option:
+    id: int
     value: str
     scalar: str
     order: int
@@ -59,6 +60,7 @@ class Inference:
     rules: set[Rule]
     facts: set[Option]
     vars: list[Variable]
+    quotation_id: str
 
 
 Premises = set[Option]

@@ -3,7 +3,7 @@ from typing import Any, Tuple, Dict
 
 
 def normalize(data) -> Tuple[str, int, Dict[str, str]]:
-    return json.dumps(data), 200, {'Content-Type': 'application/json'}
+    return json.dumps(data, default=str), 200, {'Content-Type': 'application/json'}
 
 
 def as_json(data: Any) -> Tuple[str, int, Dict[str, str]]:

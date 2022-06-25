@@ -10,6 +10,8 @@ from app.engine import infer
 from app.models import Variable, Inference, Option
 from app.utils import not_in
 from controllers.controllers_utils import as_json
+from database import get_session
+from database.tables import QuotationTable, SelectedOptionTable
 
 engine_blueprint = Blueprint('engine', __name__)
 
@@ -18,6 +20,7 @@ inferences: dict[str, Inference] = dict()
 
 def variable_to_dict(variable: Variable) -> dict:
     return {
+        'id': variable.id,
         'question': variable.question,
         'isScalar': variable.is_scalar,
         'options': [
@@ -44,11 +47,12 @@ def finish(identifier: str):
 
 @engine_blueprint.route('/inference/start', methods=['POST'])
 def inference_start():
+    quotation_id: str = request.json['quotation_id']
     rules, variables = from_table_to_model()
     if len(rules) == 0:
         return as_json({'finished': True, 'conclusions': []})
     identifier = str(uuid4())
-    inferences[identifier] = Inference(rules, set(), variables)
+    inferences[identifier] = Inference(rules, set(), variables, quotation_id)
     return as_json({'id': identifier, 'finished': False, 'variable': variable_to_dict(variables[0])})
 
 
@@ -64,6 +68,20 @@ def is_equal_scalar(target_scalar, value: Option) -> bool:
     return False
 
 
+def save_option(quotation_id: str, option: Option):
+    with get_session() as session:
+        options = list(session.query(SelectedOptionTable). \
+                       filter(SelectedOptionTable.quotation_id == quotation_id). \
+                       order_by(SelectedOptionTable.order.desc()))
+        session.add(SelectedOptionTable(
+            order=len(options),
+            scalar=option.scalar,
+            quotation_id=quotation_id,
+            option_id=option.id
+        ))
+        session.commit()
+
+
 @engine_blueprint.route('/inference/respond', methods=['POST'])
 def inference_respond() -> tuple:
     if request.json is None:
@@ -77,6 +95,7 @@ def inference_respond() -> tuple:
     value: Option = next(filter(partial(compare, value_name), options))
     if variable.is_scalar and value.value != EMPTY_VALUE_STR:
         value.scalar = value_name
+    save_option(inference.quotation_id, value)
     rules, new_facts = infer(inference.rules, value)
     inference.facts |= new_facts
     inference.rules = rules

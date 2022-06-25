@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean, Float
+from datetime import datetime
+
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean, Float, DateTime
 from sqlalchemy.orm import relation
 
 from database import Base
@@ -56,21 +58,32 @@ class ClientTable(Base):
     email = Column(String(64))
 
 
-selected_options = Table(
-    'selected_options',
-    Base.metadata,
-    Column('option_id', ForeignKey('option.id'), nullable=False),
-    Column('inference_id', ForeignKey('inference.id'), nullable=False),
-)
-
-
-class InferenceTable(Base):
-    __tablename__ = 'inference'
+class SelectedOptionTable(Base):
+    __tablename__ = 'selected_option'
     id = Column(Integer, primary_key=True)
+    order = Column(Integer, nullable=False)
+    scalar = Column(String(32))
+    quotation_id = Column(Integer, ForeignKey("quotation.id"), nullable=False)
+    option_id = Column(Integer, ForeignKey("option.id"), nullable=False)
+
+
+class SelectedDeviceTable(Base):
+    __tablename__ = 'selected_device'
+    id = Column(Integer, primary_key=True)
+    usage_time = Column(Integer, nullable=False)
+    quantity = Column(Integer, nullable=False)
+    device_id = Column(Integer, ForeignKey("device.id"), nullable=False)
+    quotation_id = Column(Integer, ForeignKey("quotation.id"), nullable=False)
+
+
+class QuotationTable(Base):
+    __tablename__ = 'quotation'
+    id = Column(Integer, primary_key=True)
+    creation_datetime = Column(DateTime, nullable=False, default=datetime.now)
     client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
 
-    selected_options = relation(OptionTable, secondary=selected_options)
-
+    selected_options = relation(SelectedOptionTable)
+    selected_devices = relation(SelectedDeviceTable)
     client = relation(ClientTable)
 
 
