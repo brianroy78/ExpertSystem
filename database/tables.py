@@ -11,7 +11,7 @@ class OptionTable(Base):
     id = Column(Integer, primary_key=True)
     value = Column(String(80), nullable=False)
     order = Column(Integer, nullable=False)
-    parent_id = Column(Integer, ForeignKey("variable.id"))
+    parent_id = Column(String(64), ForeignKey("variable.id"))
 
     variable = relation('VariableTable')
 

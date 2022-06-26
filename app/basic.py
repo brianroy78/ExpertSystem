@@ -5,6 +5,10 @@ from app.custom_functions import reduce_or
 from app.models import Variable, Rule, Conclusions, Variables, Option
 
 
+def get_variable_id(variable: Variable) -> str:
+    return variable.id
+
+
 def get_variable(value: Option) -> Variable:
     return value.variable
 
@@ -27,7 +31,7 @@ def get_conclusions_variables(rule: Rule) -> Variables:
 
 # copy
 
-def duplicate_rule(rule: Rule) -> Rule:
+def clone_rule(rule: Rule) -> Rule:
     return Rule(set(rule.premises), set(rule.conclusions), rule.formula)
 
 
@@ -53,9 +57,9 @@ def filter_variable_in_conclusions(rules: set[Rule], variable: Variable) -> Iter
 
 # graph
 
-def get_fathers_by_rules(rules: set[Rule], variable: Variable) -> Iterable[Variable]:
+def get_children_by_rules(rules: set[Rule], variable: Variable) -> Iterable[Variable]:
     return reduce_or(map(get_conclusions_variables, filter_variable_in_premises(rules, variable)))
 
 
-def get_children_by_rules(rules: set[Rule], variable: Variable) -> Iterable[Variable]:
+def get_parents_by_rules(rules: set[Rule], variable: Variable) -> Iterable[Variable]:
     return reduce_or(map(get_premises_variables, filter_variable_in_conclusions(rules, variable)))

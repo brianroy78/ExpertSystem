@@ -1,15 +1,16 @@
 from functools import partial
+from operator import contains, not_
 from typing import Optional
 from uuid import uuid4
 
 from flask import Blueprint, request
 
-from app.basic import get_variable
+from app.basic import get_variable, clone_rule, get_variable_id
 from app.constants import EMPTY_VALUE_STR
-from app.converter import from_table_to_model, to_option
+from app.converter import from_table_to_model, to_option, cut_branch
 from app.engine import infer
-from app.models import Variable, Inference, Option
-from app.utils import not_in
+from app.models import Variable, Inference, Option, Rule
+from app.utils import not_in, compose
 from controllers.controllers_utils import as_json
 from database import get_session
 from database.tables import QuotationTable, SelectedOptionTable, OptionTable
@@ -66,28 +67,39 @@ def get_selected_option_order(selected_option: SelectedOptionTable) -> int:
 
 
 def forward_to(inference: Inference, selected_option_id: int) -> Inference:
+    cloned_rules: set[Rule] = set(map(clone_rule, inference.rules))
     with get_session() as db:
         quotation: QuotationTable = db.query(QuotationTable).get(inference.quotation_id)
         sorted_options = sorted(quotation.selected_options, key=get_selected_option_order)
-        last_order = 0
+        branch: Optional[Variable] = None
         for stored_option in sorted_options:
-            last_order = stored_option.order
-            if stored_option.id == selected_option_id:
-                break
             option_table: OptionTable = stored_option.option
             variable_id: str = option_table.variable.id
             variable: Optional[Variable] = next(filter(partial(equal_var_id, variable_id), inference.vars), None)
             if variable is None:
                 continue
+            if stored_option.id == selected_option_id:
+                branch = variable
             option: Option = to_option(stored_option, option_table, variable)
             rules, new_facts = infer(inference.rules, option)
             inference.rules = rules
             inference.facts |= new_facts
             concluded_vars: set[Variable] = set(map(get_variable, inference.facts))
             inference.vars = list(filter(partial(not_in, concluded_vars), inference.vars))
+
+        if branch is None:
+            raise Exception('Target Variable nor found, this should not happen')
+        new_rules, new_vars = cut_branch(branch, cloned_rules)
+        inference.rules.update(new_rules)
+        inference.vars = new_vars + inference.vars
+        unknowns = compose(get_variable, partial(contains, new_vars), not_)
+        inference.facts = set(filter(unknowns, inference.facts))
+
+        variable_ids: set[str] = set(map(get_variable_id, new_vars))
+        option_ids: set[int] = {i[0] for i in db.query(OptionTable.id).filter(OptionTable.parent_id.in_(variable_ids))}
         db.query(SelectedOptionTable). \
             filter(SelectedOptionTable.quotation_id == inference.quotation_id). \
-            filter(SelectedOptionTable.order >= last_order).delete()
+            filter(SelectedOptionTable.option_id.in_(option_ids)).delete()
         db.commit()
     return inference
 
@@ -119,11 +131,20 @@ def is_equal_scalar(target_scalar, value: Option) -> bool:
 
 def save_option(quotation_id: str, option: Option):
     with get_session() as session:
-        options = list(session.query(SelectedOptionTable). \
-                       filter(SelectedOptionTable.quotation_id == quotation_id). \
-                       order_by(SelectedOptionTable.order.desc()))
+        options: list[tuple] = list(
+            session.query(SelectedOptionTable.order).
+            filter(SelectedOptionTable.quotation_id == quotation_id).
+            order_by(SelectedOptionTable.order.asc())
+        )
+        for index, op in enumerate(options):
+            if index != op[0]:
+                order = index
+                break
+        else:
+            order = len(options)
+
         session.add(SelectedOptionTable(
-            order=len(options),
+            order=order,
             scalar=option.scalar,
             quotation_id=quotation_id,
             option_id=option.id

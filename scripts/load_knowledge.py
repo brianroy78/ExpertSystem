@@ -103,5 +103,23 @@ def load():
                 email='address@server.com'
             )
         )
+
+        session.add(
+            ClientTable(
+                name='Pedro',
+                last_name='Yupanki',
+                phone_number='12345678',
+                email='address@server.com'
+            )
+        )
+
+        session.add(
+            ClientTable(
+                name='Jasmani',
+                last_name='Campos',
+                phone_number='12345678',
+                email='address@server.com'
+            )
+        )
         insert_devices(session)
         session.commit()
