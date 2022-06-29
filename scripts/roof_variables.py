@@ -62,3 +62,4 @@ def add_roof_questions(
 
     rule_adder([no_installation], [no_roof, no_direction, no_shadow, no_size_roof, no_material_roof])
     rule_adder([skipped_installation], [no_roof, no_direction, no_shadow, no_size_roof, no_material_roof])
+    rule_adder([brick], [flat])

@@ -71,7 +71,7 @@ def load():
         high, medium, low, no_classification = insert_var(
             'classification_average_electrical_consumption',
             '¿Cual es la clasificacion del eléctrico promedio al año (KWH)?',
-            ['Alto', 'Medio', 'Bajo'], True
+            ['Alto', 'Medio', 'Bajo']
         )
 
         insert_rule([cep], [high], f''' \
@@ -79,6 +79,8 @@ def load():
         "{medium.value}" if 50 < average_electrical_consumption < 100 else \
         "{high.value}"
         ''')
+
+        insert_rule([off_grid], [empty_cep, no_classification])
 
         installation_required, no_installation, skipped_installation = insert_var(
             'require_installation',

@@ -11,7 +11,7 @@ from app.converter import from_table_to_model, to_option, cut_branch
 from app.engine import infer
 from app.models import Variable, Inference, Option, Rule
 from app.utils import not_in, compose
-from controllers.controllers_utils import as_json
+from controllers.controllers_utils import as_json, return_ok
 from database import get_session
 from database.tables import QuotationTable, SelectedOptionTable, OptionTable
 
@@ -87,20 +87,19 @@ def forward_to(inference: Inference, selected_option_id: int) -> Inference:
             concluded_vars: set[Variable] = set(map(get_variable, inference.facts))
             inference.vars = list(filter(partial(not_in, concluded_vars), inference.vars))
 
-        if branch is None:
-            raise Exception('Target Variable nor found, this should not happen')
-        new_rules, new_vars = cut_branch(branch, cloned_rules)
-        inference.rules.update(new_rules)
-        inference.vars = new_vars + inference.vars
-        unknowns = compose(get_variable, partial(contains, new_vars), not_)
-        inference.facts = set(filter(unknowns, inference.facts))
+        if branch is not None:
+            new_rules, new_vars = cut_branch(branch, cloned_rules)
+            inference.rules.update(new_rules)
+            inference.vars = new_vars + inference.vars
+            unknowns = compose(get_variable, partial(contains, new_vars), not_)
+            inference.facts = set(filter(unknowns, inference.facts))
 
-        variable_ids: set[str] = set(map(get_variable_id, new_vars))
-        option_ids: set[int] = {i[0] for i in db.query(OptionTable.id).filter(OptionTable.parent_id.in_(variable_ids))}
-        db.query(SelectedOptionTable). \
-            filter(SelectedOptionTable.quotation_id == inference.quotation_id). \
-            filter(SelectedOptionTable.option_id.in_(option_ids)).delete()
-        db.commit()
+            variable_ids: set[str] = set(map(get_variable_id, new_vars))
+            option_ids: set[int] = {i[0] for i in db.query(OptionTable.id).filter(OptionTable.parent_id.in_(variable_ids))}
+            db.query(SelectedOptionTable). \
+                filter(SelectedOptionTable.quotation_id == inference.quotation_id). \
+                filter(SelectedOptionTable.option_id.in_(option_ids)).delete()
+            db.commit()
     return inference
 
 
@@ -176,3 +175,12 @@ def inference_respond() -> tuple:
         return finish(identifier)
 
     return as_json({'finished': False, 'variable': variable_to_dict(inference.vars[0])})
+
+
+@engine_blueprint.route('/inference/delete', methods=['POST'])
+def delete_inference():
+    if request.json is None:
+        return ()
+    identifier: str = request.json['id']
+    inferences.pop(identifier, None)
+    return return_ok()

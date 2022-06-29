@@ -30,10 +30,9 @@ so multiples rules will be removed
 
 ## To Dos
 
-* Store number values that can't be classified in a variable like the amount of electrical consumption
-* convert to manageable/normalized variable name for later use in formulas
 * Make the final conclusion downloadable from an endpoint
 * Store the conclusions in the database linked to a client
 * put and order to orphan vars
 * Group var trees which share some children 
 * Refactor code
+* Create an endpoint to remove a cached inference
