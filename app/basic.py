@@ -2,7 +2,7 @@ from functools import partial
 from typing import Iterable
 
 from app.custom_functions import reduce_or
-from app.models import Variable, Rule, Conclusions, Variables, Option
+from app.models import Variable, Rule, Conclusions, Variables, Option, Inference
 
 
 def get_variable_id(variable: Variable) -> str:
@@ -31,8 +31,21 @@ def get_conclusions_variables(rule: Rule) -> Variables:
 
 # copy
 
-def clone_rule(rule: Rule) -> Rule:
+def copy_option(option: Option) -> Option:
+    return Option(option.id, option.value, option.scalar, option.order, option.variable)
+
+
+def copy_rule(rule: Rule) -> Rule:
     return Rule(set(rule.premises), set(rule.conclusions), rule.formula)
+
+
+def copy_inference(inference: Inference) -> Inference:
+    return Inference(
+        set(map(copy_rule, inference.rules)),
+        set(map(copy_option, inference.facts)),
+        list(inference.vars),
+        inference.quotation_id
+    )
 
 
 # contains

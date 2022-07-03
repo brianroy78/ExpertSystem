@@ -23,6 +23,7 @@
    * If a given value contradicts a premise the rule is removed
    * A rule can be a formula
    * if a rule is a formula, it only conclude one variable
+ * The inference's steps are stored in a dictionary of lists, so It's possible to go backwards
 
 ## Features
  * If you want to emulate ruling out variables just set it to the empty option the variable
@@ -31,8 +32,11 @@ so multiples rules will be removed
 ## To Dos
 
 * Make the final conclusion downloadable from an endpoint
-* Store the conclusions in the database linked to a client
+* Store the selected devices in the database linked to a client
 * put and order to orphan vars
 * Group var trees which share some children 
 * Refactor code
 * Create an endpoint to remove a cached inference
+* Create a class group of deduction and a function that interprets them, since it starts to take a lot of code to do so
+* Create and endpoint that shows an overview of a quotation
+* make possible to store a scalar value in the option table

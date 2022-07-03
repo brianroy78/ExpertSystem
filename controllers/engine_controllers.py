@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from flask import Blueprint, request
 
-from app.basic import get_variable, clone_rule, get_variable_id
+from app.basic import get_variable, copy_rule, get_variable_id, copy_inference
 from app.constants import EMPTY_VALUE_STR
 from app.converter import from_table_to_model, to_option, cut_branch
 from app.engine import infer
@@ -17,7 +17,7 @@ from database.tables import QuotationTable, SelectedOptionTable, OptionTable
 
 engine_blueprint = Blueprint('engine', __name__)
 
-inferences: dict[str, Inference] = dict()
+inferences: dict[str, list[Inference]] = dict()
 
 
 def variable_to_dict(variable: Variable) -> dict:
@@ -42,7 +42,7 @@ def parse_facts(inference: Inference) -> list[dict[str, str]]:
 
 
 def finish(identifier: str):
-    final_response = as_json({'finished': True, 'conclusions': parse_facts(inferences[identifier])})
+    final_response = as_json({'finished': True, 'conclusions': parse_facts(inferences[identifier][-1])})
     inferences.pop(identifier, None)
     return final_response
 
@@ -54,7 +54,7 @@ def inference_start():
     if len(rules) == 0:
         return as_json({'finished': True, 'conclusions': []})
     identifier = str(uuid4())
-    inferences[identifier] = Inference(rules, set(), variables, quotation_id)
+    inferences[identifier] = [Inference(rules, set(), variables, quotation_id)]
     return as_json({'id': identifier, 'finished': False, 'variable': variable_to_dict(variables[0])})
 
 
@@ -67,7 +67,7 @@ def get_selected_option_order(selected_option: SelectedOptionTable) -> int:
 
 
 def forward_to(inference: Inference, selected_option_id: int) -> Inference:
-    cloned_rules: set[Rule] = set(map(clone_rule, inference.rules))
+    cloned_rules: set[Rule] = set(map(copy_rule, inference.rules))
     with get_session() as db:
         quotation: QuotationTable = db.query(QuotationTable).get(inference.quotation_id)
         sorted_options = sorted(quotation.selected_options, key=get_selected_option_order)
@@ -95,7 +95,8 @@ def forward_to(inference: Inference, selected_option_id: int) -> Inference:
             inference.facts = set(filter(unknowns, inference.facts))
 
             variable_ids: set[str] = set(map(get_variable_id, new_vars))
-            option_ids: set[int] = {i[0] for i in db.query(OptionTable.id).filter(OptionTable.parent_id.in_(variable_ids))}
+            option_ids: set[int] = {i[0] for i in
+                                    db.query(OptionTable.id).filter(OptionTable.parent_id.in_(variable_ids))}
             db.query(SelectedOptionTable). \
                 filter(SelectedOptionTable.quotation_id == inference.quotation_id). \
                 filter(SelectedOptionTable.option_id.in_(option_ids)).delete()
@@ -112,7 +113,7 @@ def inference_start_from():
         return as_json({'finished': True, 'conclusions': []})
     identifier = str(uuid4())
     inference = forward_to(Inference(rules, set(), variables, quotation_id), selected_option_id)
-    inferences[identifier] = inference
+    inferences[identifier] = [inference]
     return as_json({'id': identifier, 'finished': False, 'variable': variable_to_dict(inference.vars[0])})
 
 
@@ -156,7 +157,8 @@ def inference_respond() -> tuple:
     if request.json is None:
         return ()
     identifier: str = request.json['id']
-    inference: Inference = inferences[identifier]
+    last_inference: Inference = inferences[identifier][-1]
+    inference: Inference = copy_inference(last_inference)
     value_name: str = request.json['value_name']
     variable: Variable = inference.vars.pop(0)
     options: set[Option] = variable.options
@@ -165,16 +167,26 @@ def inference_respond() -> tuple:
     if variable.is_scalar and value.value != EMPTY_VALUE_STR:
         value.scalar = value_name
     save_option(inference.quotation_id, value)
-    rules, new_facts = infer(inference.rules, value)
+    new_rules, new_facts = infer(inference.rules, value)
     inference.facts |= new_facts
-    inference.rules = rules
     concluded_vars: set[Variable] = set(map(get_variable, inference.facts))
     inference.vars = list(filter(partial(not_in, concluded_vars), inference.vars))
+    inferences[identifier].append(inference)
 
     if len(inference.vars) == 0:
         return finish(identifier)
 
     return as_json({'finished': False, 'variable': variable_to_dict(inference.vars[0])})
+
+
+@engine_blueprint.route('/inference/back', methods=['POST'])
+def back_inference():
+    identifier: str = request.json['id']
+    versions = inferences[identifier]
+    versions.pop()
+    if len(versions) == 0:
+        return as_json({'empty': True})
+    return as_json({'empty': False, 'finished': False, 'variable': variable_to_dict(versions[-1].vars[0])})
 
 
 @engine_blueprint.route('/inference/delete', methods=['POST'])

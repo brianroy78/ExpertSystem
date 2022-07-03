@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Iterable
 
-from app.basic import get_conclusions, get_premises_variables, premises_empty, clone_rule
+from app.basic import get_conclusions, get_premises_variables, premises_empty, copy_rule
 from app.custom_functions import reduce_or
 from app.models import Rule, Option
 from app.utils import first, group_by, compose
@@ -21,7 +21,7 @@ def trigger_rule(rule: Rule) -> set[Option]:
 
 
 def update_rule(fact: Option, rule: Rule) -> Rule:
-    clone: Rule = clone_rule(rule)
+    clone: Rule = copy_rule(rule)
     if clone.formula is not None and fact.variable in get_premises_variables(clone):
         clone.formula = clone.formula.replace(fact.variable.id, str(fact.scalar))
     if fact in clone.premises:
