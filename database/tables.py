@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean, Float, DateTime
-from sqlalchemy.orm import relation
+from sqlalchemy.orm import relationship
 
 from database import Base
 
@@ -13,7 +13,7 @@ class OptionTable(Base):
     order = Column(Integer, nullable=False)
     parent_id = Column(String(64), ForeignKey("variable.id"))
 
-    variable = relation('VariableTable')
+    variable = relationship('VariableTable')
 
 
 class VariableTable(Base):
@@ -22,7 +22,7 @@ class VariableTable(Base):
     question = Column(String(128), unique=True, nullable=False)
     is_scalar = Column(Boolean, nullable=False, default=False)
 
-    options = relation(OptionTable, overlaps="variable")
+    options = relationship(OptionTable, overlaps="variable")
 
 
 premise = Table(
@@ -45,8 +45,8 @@ class RuleTable(Base):
     id = Column(Integer, primary_key=True)
     formula = Column(String(256))
 
-    premises = relation(OptionTable, secondary=premise)
-    conclusions = relation(OptionTable, secondary=conclusion)
+    premises = relationship(OptionTable, secondary=premise)
+    conclusions = relationship(OptionTable, secondary=conclusion)
 
 
 class ClientTable(Base):
@@ -66,7 +66,7 @@ class SelectedOptionTable(Base):
     quotation_id = Column(Integer, ForeignKey("quotation.id"), nullable=False)
     option_id = Column(Integer, ForeignKey("option.id"), nullable=False)
 
-    option = relation(OptionTable)
+    option = relationship(OptionTable)
 
 
 class SelectedDeviceTable(Base):
@@ -84,9 +84,9 @@ class QuotationTable(Base):
     creation_datetime = Column(DateTime, nullable=False, default=datetime.now)
     client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
 
-    selected_options = relation(SelectedOptionTable, cascade="all, delete-orphan")
-    selected_devices = relation(SelectedDeviceTable, cascade="all, delete-orphan")
-    client = relation(ClientTable)
+    selected_options = relationship(SelectedOptionTable, cascade="all, delete-orphan")
+    selected_devices = relationship(SelectedDeviceTable, cascade="all, delete-orphan")
+    client = relationship(ClientTable)
 
 
 class DeviceTable(Base):
